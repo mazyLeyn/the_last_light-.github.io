@@ -1057,7 +1057,7 @@ function drawEnding() {
 function loop(time) {
   requestAnimationFrame(loop);
   const dt=time-lastTime; lastTime=time;
-  if (dt>100) { clearJP(); return; } // tab switch vb.
+  if (dt>100) { clearJP(); } // tab switch vb.
   frameCount++;
 
   renderCtx.fillStyle=levels[currentLevel]?levels[currentLevel].bg:'#020204';
@@ -1126,6 +1126,8 @@ function resize() {
 
 // --- BASLATMA ---
 function init() {
+  if (window.gameInitialized) return;
+  window.gameInitialized = true;
   canvas=document.getElementById('game');
   canvas.width=WIDTH; canvas.height=HEIGHT;
   ctx=canvas.getContext('2d');
