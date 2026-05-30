@@ -1013,6 +1013,69 @@ function updateFade() {
 }
 function drawFade() { if(fadeAlpha>0){renderCtx.save();renderCtx.globalAlpha=fadeAlpha;renderCtx.fillStyle='#000';renderCtx.fillRect(0,0,WIDTH,HEIGHT);renderCtx.restore();} }
 
+// --- SİS SİSTEMİ (Ana Menü) ---
+const fogLayers = [
+  { y: 0.55, speed: 0.18, amp: 6,  freq: 0.012, alpha: 0.13, h: 28, color: '#1a1830' },
+  { y: 0.65, speed: 0.28, amp: 8,  freq: 0.018, alpha: 0.18, h: 22, color: '#1e1a3a' },
+  { y: 0.72, speed: 0.12, amp: 5,  freq: 0.009, alpha: 0.12, h: 32, color: '#141228' },
+  { y: 0.80, speed: 0.38, amp: 10, freq: 0.022, alpha: 0.22, h: 20, color: '#231e42' },
+  { y: 0.88, speed: 0.20, amp: 7,  freq: 0.015, alpha: 0.16, h: 26, color: '#1a1830' },
+];
+let fogOffset = 0;
+
+// Sis için offscreen buffer
+let fogCanvas = null, fogCtx = null;
+
+function drawFog() {
+  fogOffset += 0.18;
+
+  const PX = 4; // daha iri piksel bloklar
+  const cols = Math.ceil(WIDTH / PX);
+  const rows = Math.ceil(HEIGHT / PX);
+
+  if (!fogCanvas) {
+    fogCanvas = document.createElement('canvas');
+    fogCanvas.width = cols;
+    fogCanvas.height = rows;
+    fogCtx = fogCanvas.getContext('2d');
+  }
+
+  const imgData = fogCtx.createImageData(cols, rows);
+  const data = imgData.data;
+
+  for (let row = 0; row < rows; row++) {
+    for (let ny = row / rows, col = 0; col < cols; col++) {
+      const nx = col / cols;
+
+      // Yavaş kayan köşegen bantlar
+      const d1 = Math.sin((nx * 1.8 - ny * 2.4 + fogOffset * 0.006) * Math.PI);
+      const d2 = Math.sin((nx * 0.9 + ny * 1.6 - fogOffset * 0.004) * Math.PI * 1.5);
+      const d3 = Math.sin((nx * 2.9 - ny * 1.1 + fogOffset * 0.003) * Math.PI * 0.8);
+
+      const noise = d1 * 0.5 + d2 * 0.3 + d3 * 0.2;
+
+      // Sadece koyu bant bölgelerinde piksel bas
+      if (noise < 0.05 || noise > 0.62) continue;
+
+      const t = (noise - 0.05) / 0.57;
+      const a = t * (1 - t) * 4 * 0.28; // max ~%28 opaklık
+
+      const idx = (row * cols + col) * 4;
+      // Neredeyse siyah, çok hafif mor tint
+      data[idx]     = 8;
+      data[idx + 1] = 6;
+      data[idx + 2] = 16;
+      data[idx + 3] = Math.floor(a * 255);
+    }
+  }
+
+  fogCtx.putImageData(imgData, 0, 0);
+  renderCtx.save();
+  renderCtx.imageSmoothingEnabled = false;
+  renderCtx.drawImage(fogCanvas, 0, 0, WIDTH, HEIGHT);
+  renderCtx.restore();
+}
+
 // --- FLICKER DURUMU (global, drawMenu dışında tutulur) ---
 const flicker = {
   phase: 0,       // 0=normal, 1=kesinti
@@ -1090,6 +1153,7 @@ function updateSettings() {
 
 function drawMenu() {
   renderCtx.fillStyle='#030306'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
+  drawFog();
   if (frameCount%4===0) emit(Math.random()*WIDTH,HEIGHT+2,(Math.random()-0.5)*0.2,-Math.random()*0.6-0.3,55,1,'#3344aa','dust');
   drawParts(0,0);
   renderCtx.save();
