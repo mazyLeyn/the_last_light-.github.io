@@ -40,22 +40,22 @@ canvas {
 // ============================================================
 (function() {
 'use strict';
-
 // --- SABITLER ---
 const WIDTH = 320;
 const HEIGHT = 180;
 const TILE = 8;
 const GRAVITY = 0.22;
+const GRAVITY = 0.15;
 const MAX_FALL = 4.5;
 const PLAYER_SPEED = 1.1;
 const JUMP_FORCE = -3.6;
+const PLAYER_SPEED = 1.2;
+const JUMP_FORCE = -3.8;
 const COYOTE_TIME = 7;
 const JUMP_BUFFER = 7;
 const PARTICLE_POOL = 300;
-
 // Tile turleri
 const T = { AIR:0, SOLID:1, PLATFORM:2, CRYSTAL:3, CHECKPOINT:4, NPC:5, HAZARD:6, DOOR:7, CHOICE_A:8, CHOICE_B:9 };
-
 // --- OYUN DURUMU ---
 let canvas, ctx, lightCanvas, lightCtx, renderCanvas, renderCtx;
 let gameState = 'loading';
@@ -63,18 +63,16 @@ let currentLevel = 0;
 let fragments = 0;
 let totalFragments = 8;
 let checkpointX = 0, checkpointY = 0;
-let fadeAlpha = 1, fadeDir = 0, fadeCallback = null;
+let fadeAlpha = 0, fadeDir = 0, fadeCallback = null;
 let endingType = '';
 let lastTime = 0, frameCount = 0;
 let paused = false, pauseSel = 0;
 let menuSel = 0, showCtrl = false;
 let introStep = 0, introTimer = 0;
 let endingTimer = 0;
-
 // --- INPUT ---
 const keys = {};
 const jp = {}; // just pressed
-
 document.addEventListener('keydown', e => {
   if (!keys[e.code]) jp[e.code] = true;
   keys[e.code] = true;
@@ -82,18 +80,15 @@ document.addEventListener('keydown', e => {
   if (actx && actx.state === 'suspended') actx.resume().catch(()=>{});
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
-
 function isLeft() { return keys['ArrowLeft'] || keys['KeyA']; }
 function isRight() { return keys['ArrowRight'] || keys['KeyD']; }
 function isJump() { return jp['Space'] || jp['ArrowUp'] || jp['KeyW']; }
 function isInteract() { return jp['KeyE'] || jp['Enter']; }
 function isPause() { return jp['Escape']; }
 function clearJP() { for (let k in jp) delete jp[k]; }
-
 // --- SES SISTEMI ---
 let actx = null, masterGain = null, audioReady = false;
 let ambOsc = null, windSrc = null, ambGain2 = null, windGain2 = null;
-
 function initAudio() {
   if (audioReady) return;
   try {
@@ -105,7 +100,6 @@ function initAudio() {
     if (actx.state === 'suspended') actx.resume().catch(()=>{});
   } catch(e) {}
 }
-
 function playTone(freq, dur, type, vol, delay) {
   if (!actx) return;
   const t = actx.currentTime + (delay || 0);
@@ -118,13 +112,11 @@ function playTone(freq, dur, type, vol, delay) {
   o.connect(g); g.connect(masterGain);
   o.start(t); o.stop(t + dur);
 }
-
 function playCrystal() {
   playTone(880, 0.4, 'sine', 0.12);
   playTone(1320, 0.5, 'sine', 0.08, 0.08);
   playTone(1760, 0.4, 'sine', 0.06, 0.16);
 }
-
 function playStep() {
   if (!actx) return;
   const buf = actx.createBuffer(1, 600, actx.sampleRate);
@@ -132,13 +124,9 @@ function playStep() {
   for (let i = 0; i < 600; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/600, 3) * 0.04;
   const s = actx.createBufferSource(); s.buffer = buf; s.connect(masterGain); s.start();
 }
-
 function playTick() { playTone(500 + Math.random()*300, 0.04, 'square', 0.03); }
-
 function playJump() { playTone(280, 0.12, 'sine', 0.07); playTone(420, 0.08, 'sine', 0.05, 0.04); }
-
 function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 'sine', 0.04, 0.1); }
-
 function startAmbient(lvl) {
   if (!actx) return;
   stopAmbient();
@@ -149,7 +137,6 @@ function startAmbient(lvl) {
   ambGain2.gain.value = 0.035;
   ambOsc.connect(ambGain2); ambGain2.connect(masterGain);
   ambOsc.start();
-
   const bs = actx.sampleRate * 2;
   const nb = actx.createBuffer(1, bs, actx.sampleRate);
   const nd = nb.getChannelData(0);
@@ -162,13 +149,11 @@ function startAmbient(lvl) {
   windSrc.connect(flt); flt.connect(windGain2); windGain2.connect(masterGain);
   windSrc.start();
 }
-
 function stopAmbient() {
   try { if (ambOsc) ambOsc.stop(); } catch(e){}
   try { if (windSrc) windSrc.stop(); } catch(e){}
   ambOsc = null; windSrc = null;
 }
-
 function playEnding(type) {
   if (!actx) return;
   const notes = type === 'sacrifice'
@@ -179,17 +164,14 @@ function playEnding(type) {
     playTone(n*1.5, 0.7, 'triangle', 0.05, i*0.5+0.15);
   });
 }
-
 // --- PARCACIK SISTEMI ---
 const parts = [];
 for (let i = 0; i < PARTICLE_POOL; i++) parts.push({a:false,x:0,y:0,vx:0,vy:0,l:0,ml:0,s:1,c:'#fff',t:'n'});
-
 function emit(x,y,vx,vy,life,size,color,type) {
   for (let p of parts) {
     if (!p.a) { p.a=true;p.x=x;p.y=y;p.vx=vx;p.vy=vy;p.l=life;p.ml=life;p.s=size;p.c=color;p.t=type||'n'; return; }
   }
 }
-
 function updateParts() {
   for (let p of parts) {
     if (!p.a) continue;
@@ -199,7 +181,6 @@ function updateParts() {
     if (p.l<=0) p.a=false;
   }
 }
-
 function drawParts(cx,cy) {
   renderCtx.save();
   renderCtx.globalCompositeOperation = 'lighter';
@@ -213,15 +194,13 @@ function drawParts(cx,cy) {
   }
   renderCtx.restore();
 }
-
 // --- OYUNCU ---
 const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32};
-
+const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:75};
 function resetPlayer(x,y) {
   player.x=x;player.y=y;player.vx=0;player.vy=0;
   player.grounded=false;player.coyote=0;player.jbuf=0;
 }
-
 // --- KAMERA ---
 const cam = {x:0,y:0};
 function updateCam(lvl) {
@@ -232,10 +211,8 @@ function updateCam(lvl) {
   cam.x = Math.max(0, Math.min(cam.x, lvl.w*TILE-WIDTH));
   cam.y = Math.max(0, Math.min(cam.y, lvl.h*TILE-HEIGHT));
 }
-
 // --- SEVIYE VERISI ---
 const levels = [];
-
 function mkLevel(w,h,builder) {
   const tiles = [];
   for (let y=0;y<h;y++) { tiles[y]=[]; for (let x=0;x<w;x++) tiles[y][x]=T.AIR; }
@@ -244,13 +221,11 @@ function mkLevel(w,h,builder) {
   builder(lvl,tiles);
   return lvl;
 }
-
 function fillR(t,x1,y1,x2,y2,v) {
   for (let y=y1;y<=y2;y++) for (let x=x1;x<=x2;x++)
     if (y>=0&&y<t.length&&x>=0&&x<t[0].length) t[y][x]=v;
 }
 function plat(t,x,y,len,v) { for (let i=0;i<len;i++) if(y>=0&&y<t.length&&x+i>=0&&x+i<t[0].length) t[y][x+i]=v||T.SOLID; }
-
 // Bolum 1: Uyanis (Orman)
 levels.push(mkLevel(130,23,(lvl,t)=>{
   lvl.bg='#030508'; lvl.pcolors=['#050a0f','#081015','#0b181f'];
@@ -283,7 +258,6 @@ levels.push(mkLevel(130,23,(lvl,t)=>{
   // Kapi
   lvl.door={x:125*TILE,y:17*TILE};
 }));
-
 // Bolum 2: Terk Edilmis Koy
 levels.push(mkLevel(150,23,(lvl,t)=>{
   lvl.bg='#040307'; lvl.pcolors=['#070510','#0b0918','#0f0d20'];
@@ -313,7 +287,6 @@ levels.push(mkLevel(150,23,(lvl,t)=>{
   // Kapi
   lvl.door={x:145*TILE,y:17*TILE};
 }));
-
 // Bolum 3: Unutulmus Madenler
 levels.push(mkLevel(140,28,(lvl,t)=>{
   lvl.bg='#020204'; lvl.pcolors=['#030206','#050409','#07060c'];
@@ -356,7 +329,6 @@ levels.push(mkLevel(140,28,(lvl,t)=>{
   // Kapi
   lvl.door={x:135*TILE,y:22*TILE};
 }));
-
 // Bolum 4: Yankilanan Ucurum
 levels.push(mkLevel(160,28,(lvl,t)=>{
   lvl.bg='#030206'; lvl.pcolors=['#040210','#060418','#080620'];
@@ -392,7 +364,6 @@ levels.push(mkLevel(160,28,(lvl,t)=>{
   // Kapi
   lvl.door={x:152*TILE,y:8*TILE};
 }));
-
 // Bolum 5: Kaynak (Kristal Magarasi)
 levels.push(mkLevel(110,23,(lvl,t)=>{
   lvl.bg='#020208'; lvl.pcolors=['#04030f','#060518','#080720'];
@@ -437,15 +408,12 @@ levels.push(mkLevel(110,23,(lvl,t)=>{
   fillR(t,99,18,102,19,T.CHOICE_B);
   lvl.door=null;
 }));
-
 // --- DIYALOG SISTEMI ---
 let dlgActive=false, dlgLines=[], dlgLine=0, dlgChar=0, dlgTimer=0, dlgCB=null;
-
 function startDlg(lines,cb) {
   dlgActive=true; dlgLines=lines; dlgLine=0; dlgChar=0; dlgTimer=0; dlgCB=cb||null;
   gameState='dialogue';
 }
-
 function updateDlg() {
   if (!dlgActive) return;
   dlgTimer++;
@@ -458,7 +426,6 @@ function updateDlg() {
     else { dlgLine++; dlgChar=0; if (dlgLine>=dlgLines.length) { dlgActive=false; gameState='play'; if(dlgCB) dlgCB(); } }
   }
 }
-
 function drawDlg() {
   if (!dlgActive) return;
   renderCtx.save();
@@ -476,7 +443,6 @@ function drawDlg() {
   }
   renderCtx.restore();
 }
-
 function wrapTxt(c,text,x,y,mw,lh) {
   const words=text.split(' '); let line='', ly=y;
   for (let w of words) {
@@ -486,7 +452,6 @@ function wrapTxt(c,text,x,y,mw,lh) {
   }
   c.fillText(line.trim(),x,ly);
 }
-
 // --- KRISTAL DIYALOGLARI ---
 const crystDlg = [
   ["Fragman 1: Bir zamanlar bu dünya ışıkla doluydu.","Her canlı kendi parıltısını taşırdı.","Ama bir gün... karanlık geldi ve her şeyi yuttu."],
@@ -498,7 +463,6 @@ const crystDlg = [
   ["Fragman 7: Kaynak yaklaşıyor, hissedebiliyorum.","Kristallerin parıltısı yoğunlaşıyor.","İçimde bir ses: 'Hazır mısın bedeli ödemeye?'"],
   ["Fragman 8: Son kristal — tüm parçalar birleşiyor.","Hikâye tamamlanıyor. Artık gerçeği biliyorum.","Seçim zamanı geldi. Ne yapacağım bana kalmış."]
 ];
-
 // --- PARALLAX ---
 function drawParallax(lvl) {
   const cols=lvl.pcolors;
@@ -521,7 +485,6 @@ function drawParallax(lvl) {
     drawHill(bx,HEIGHT-bh,30,bh);
   }
 }
-
 function drawMtn(x,y,w,h) {
   renderCtx.beginPath();
   renderCtx.moveTo(x,y+h); renderCtx.lineTo(x+w*0.2,y+h*0.3);
@@ -529,14 +492,12 @@ function drawMtn(x,y,w,h) {
   renderCtx.lineTo(x+w*0.8,y+h*0.1); renderCtx.lineTo(x+w,y+h);
   renderCtx.fill();
 }
-
 function drawHill(x,y,w,h) {
   renderCtx.beginPath();
   renderCtx.moveTo(x,y+h);
   renderCtx.quadraticCurveTo(x+w*0.5,y-h*0.4,x+w,y+h);
   renderCtx.fill();
 }
-
 // --- SEVIYE CIZIMI ---
 function drawTiles(lvl) {
   const sc=Math.max(0,Math.floor(cam.x/TILE));
@@ -564,7 +525,6 @@ function drawTiles(lvl) {
     }
   }
 }
-
 function drawCrystals(lvl) {
   for (let c of lvl.crystals) {
     if (c.col) continue;
@@ -585,7 +545,6 @@ function drawCrystals(lvl) {
     if (frameCount%18===0) emit(c.x+4+Math.random()*4-2,c.y+4,(Math.random()-0.5)*0.4,-Math.random()*0.4,25,1,'#88ddff','spark');
   }
 }
-
 function drawNPCs(lvl) {
   for (let npc of lvl.npcs) {
     const sx=npc.x-cam.x, sy=npc.y-cam.y;
@@ -624,7 +583,6 @@ function drawNPCs(lvl) {
     }
   }
 }
-
 function drawDoor(lvl) {
   if (!lvl.door) return;
   const d=lvl.door, sx=d.x-cam.x, sy=d.y-cam.y;
@@ -639,7 +597,6 @@ function drawDoor(lvl) {
   renderCtx.restore();
   if (frameCount%7===0) emit(d.x+Math.random()*8,d.y+Math.random()*16,(Math.random()-0.5)*0.2,-Math.random()*0.4,35,1,'#aa88ff','spark');
 }
-
 // --- OYUNCU CIZIMI ---
 function drawPlayer() {
   const sx=Math.floor(player.x-cam.x), sy=Math.floor(player.y-cam.y);
@@ -663,7 +620,6 @@ function drawPlayer() {
   if (frameCount%4===0&&(player.vx!==0||!player.grounded))
     emit(player.x+2,player.y+6,(Math.random()-0.5)*0.15,0.15,18,1,'#6699bb','dust');
 }
-
 // --- ISIK SISTEMI ---
 function drawLighting() {
   lightCtx.fillStyle='rgba(0,0,0,0.91)';
@@ -718,7 +674,6 @@ function drawLighting() {
   lightCtx.restore();
   renderCtx.drawImage(lightCanvas,0,0);
 }
-
 // --- DEKORASYON ---
 function drawDeco(lvl) {
   if (currentLevel===0) {
@@ -762,7 +717,6 @@ function drawDeco(lvl) {
     if (frameCount%12===0) emit(cam.x+Math.random()*WIDTH,Math.random()*20,0,0.08,35,1,'#223366','dust');
   }
 }
-
 // --- HUD ---
 function drawHUD() {
   renderCtx.save();
@@ -772,7 +726,6 @@ function drawHUD() {
   renderCtx.fillStyle='#556'; renderCtx.fillText(names[currentLevel],4,19);
   renderCtx.restore();
 }
-
 // --- SECIM GOSTERGELERI ---
 function drawChoices() {
   const lvl=levels[currentLevel];
@@ -789,7 +742,6 @@ function drawChoices() {
   renderCtx.fillText('[E]',Math.floor(rx+2),Math.floor(ry+10));
   renderCtx.restore();
 }
-
 // --- FIZIK / CARPISMA ---
 function getTile(tiles,px,py) {
   const tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
@@ -797,7 +749,6 @@ function getTile(tiles,px,py) {
   return tiles[ty][tx];
 }
 function isSolid(tiles,px,py) { return getTile(tiles,px,py)===T.SOLID; }
-
 function resolveX(lvl) {
   const t=lvl.tiles;
   for (let i=0;i<3;i++) {
@@ -806,7 +757,6 @@ function resolveX(lvl) {
     if (player.vx<0&&isSolid(t,player.x,cy)) { player.x=Math.floor(player.x/TILE)*TILE+TILE; player.vx=0; break; }
   }
 }
-
 function resolveY(lvl) {
   const t=lvl.tiles;
   player.grounded=false;
@@ -829,7 +779,6 @@ function resolveY(lvl) {
     }
   }
 }
-
 // --- OYUN MANTIGI ---
 function updatePlay() {
   if (isPause()) { gameState='pause'; pauseSel=0; return; }
@@ -900,14 +849,12 @@ function updatePlay() {
   }
   updateCam(lvl);
 }
-
 function respawn() {
   playDeath();
   resetPlayer(checkpointX,checkpointY);
   fadeAlpha=0.6; fadeDir=-1;
   for (let i=0;i<10;i++) emit(player.x+3,player.y+4,(Math.random()-0.5)*1.5,(Math.random()-0.5)*1.5,25,1,'#88aadd','spark');
 }
-
 // --- SEVIYE BASLAT ---
 function startLevel(idx) {
   currentLevel=idx;
@@ -921,7 +868,6 @@ function startLevel(idx) {
   startAmbient(idx);
   fadeAlpha=1; fadeDir=-1;
 }
-
 // --- FADE ---
 function startFade(dir,cb) { fadeDir=dir; fadeCallback=cb; if(dir===1)fadeAlpha=0; }
 function updateFade() {
@@ -929,7 +875,6 @@ function updateFade() {
   else if (fadeDir===-1) { fadeAlpha-=0.025; if(fadeAlpha<=0){fadeAlpha=0;fadeDir=0;} }
 }
 function drawFade() { if(fadeAlpha>0){renderCtx.save();renderCtx.globalAlpha=fadeAlpha;renderCtx.fillStyle='#000';renderCtx.fillRect(0,0,WIDTH,HEIGHT);renderCtx.restore();} }
-
 // --- MENU ---
 function updateMenu() {
   if (showCtrl) { if(jp['Escape']||jp['Enter']||jp['Space']) showCtrl=false; return; }
@@ -941,7 +886,6 @@ function updateMenu() {
     else showCtrl=true;
   }
 }
-
 function drawMenu() {
   renderCtx.fillStyle='#030306'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
   // Arka plan parcaciklari
@@ -961,7 +905,6 @@ function drawMenu() {
   renderCtx.restore();
   if (showCtrl) drawCtrlScreen();
 }
-
 function drawCtrlScreen() {
   renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
@@ -971,7 +914,6 @@ function drawCtrlScreen() {
   const c=['Hareket: Ok Tuşları / WASD','Zıpla: Space (basılı tut = yüksek)','Etkileşim: E','Duraklat: ESC','','Geri: ESC / Enter'];
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
-
 // --- INTRO ---
 const introTxts=["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""];
 function updateIntro() {
@@ -993,7 +935,6 @@ function drawIntro() {
     renderCtx.restore();
   }
 }
-
 // --- PAUSE ---
 function updatePause() {
   if (jp['ArrowDown']||jp['KeyS']) pauseSel=(pauseSel+1)%2;
@@ -1011,11 +952,9 @@ function drawPause() {
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
   });
 }
-
 // --- ENDING ---
 const endSacrifice=["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"];
 const endSelfish=["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"];
-
 function updateEnding() { endingTimer++; }
 function drawEnding() {
   renderCtx.fillStyle=endingType==='sacrifice'?'#030508':'#050303';
@@ -1052,20 +991,16 @@ function drawEnding() {
     }
   }
 }
-
 // --- ANA DONGU ---
 function loop(time) {
   requestAnimationFrame(loop);
   const dt=time-lastTime; lastTime=time;
   if (dt>100) { clearJP(); return; } // tab switch vb.
   frameCount++;
-
   renderCtx.fillStyle=levels[currentLevel]?levels[currentLevel].bg:'#020204';
   renderCtx.fillRect(0,0,WIDTH,HEIGHT);
-
   updateFade();
   updateParts();
-
   switch(gameState) {
     case 'menu': updateMenu(); drawMenu(); break;
     case 'intro': updateIntro(); drawIntro(); break;
@@ -1107,14 +1042,11 @@ function loop(time) {
       break;
     case 'ending': updateEnding(); drawEnding(); break;
   }
-
   drawFade();
   clearJP();
-
   // Render to visible canvas
   ctx.drawImage(renderCanvas,0,0);
 }
-
 // --- BOYUTLANDIRMA ---
 function resize() {
   const ratio=WIDTH/HEIGHT;
@@ -1123,26 +1055,24 @@ function resize() {
   canvas.style.width=Math.floor(w)+'px';
   canvas.style.height=Math.floor(h)+'px';
 }
-
 // --- BASLATMA ---
+let isInitialized = false;
 function init() {
+  if (isInitialized) return;
+  isInitialized = true;
   canvas=document.getElementById('game');
   canvas.width=WIDTH; canvas.height=HEIGHT;
   ctx=canvas.getContext('2d');
   ctx.imageSmoothingEnabled=false;
-
   renderCanvas=document.createElement('canvas');
   renderCanvas.width=WIDTH; renderCanvas.height=HEIGHT;
   renderCtx=renderCanvas.getContext('2d');
   renderCtx.imageSmoothingEnabled=false;
-
   lightCanvas=document.createElement('canvas');
   lightCanvas.width=WIDTH; lightCanvas.height=HEIGHT;
   lightCtx=lightCanvas.getContext('2d');
-
   window.addEventListener('resize',resize);
   resize();
-
   // Yuklenme simulasyonu
   const fill=document.getElementById('loadFill');
   let prog=0;
@@ -1163,7 +1093,6 @@ function init() {
     }
   },80);
 }
-
 // Font hazir olunca basla
 if (document.fonts&&document.fonts.ready) {
   document.fonts.ready.then(init).catch(init);
@@ -1172,7 +1101,6 @@ if (document.fonts&&document.fonts.ready) {
 }
 // Fallback
 setTimeout(()=>{ if(gameState==='loading') init(); },4000);
-
 })();
 </script>
 </body>
