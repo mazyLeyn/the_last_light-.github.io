@@ -4,10 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Last Light</title>
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
-<meta property="og:image" content="logo.png">
-<meta name="twitter:image" content="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,14 +17,6 @@ canvas {
   image-rendering: crisp-edges;
   -ms-interpolation-mode: nearest-neighbor;
 }
-#loading {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #000; color: #aad; font-family: 'Press Start 2P', monospace;
-  font-size: 11px; z-index: 999; transition: opacity 1.2s;
-}
-#loading .bar { width: 200px; height: 6px; border: 1px solid #557; margin-top: 20px; border-radius: 3px; }
-#loading .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #5588cc, #aaddff); transition: width 0.3s; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -352,7 +340,7 @@ levels.push(mkLevel(130,23,(lvl,t)=>{
   lvl.cps.push({x:50*TILE,y:18*TILE});
   lvl.cps.push({x:90*TILE,y:14*TILE});
   lvl.npcs.push({x:18*TILE,y:13*TILE,w:8,h:20,
-    lines:["Uyan, kÃ¼Ã§Ã¼k Ä±ÅŸÄ±k...","Sen bu dÃ¼nyanÄ±n son parÄ±ltÄ±sÄ±sÄ±n.","KaranlÄ±k her yeri sardÄ±. Ama sen hÃ¢lÃ¢ parlÄ±yorsun.","Ä°lerle... Kristalleri bul.","Onlar sana geÃ§miÅŸi ve yolu gÃ¶sterecek.","Dikkatli ol â€” karanlÄ±k derin Ã§ukurlar aÃ§tÄ±."],
+    lines:["Uyan, küçük ışık...","Sen bu dünyanın son parıltısısın.","Karanlık her yeri sardı. Ama sen hâlâ parlıyorsun.","İlerle... Kristalleri bul.","Onlar sana geçmişi ve yolu gösterecek.","Dikkatli ol — karanlık derin çukurlar açtı."],
     done:false, type:'tree'});
   lvl.door={x:125*TILE,y:17*TILE};
 }));
@@ -467,14 +455,14 @@ levels.push(mkLevel(110,23,(lvl,t)=>{
   lvl.cps.push({x:66*TILE,y:10*TILE});
   lvl.npcs.push({x:92*TILE,y:17*TILE,w:8,h:20,
     lines:[
-      "Sonunda buradasÄ±n, kÃ¼Ã§Ã¼k Ä±ÅŸÄ±k.",
-      "TÃ¼m parÃ§alarÄ± topladÄ±n... ya da ne kadar bulabildiysen.",
-      "Åimdi bir seÃ§im yapmalÄ±sÄ±n.",
-      "IÅŸÄ±ÄŸÄ±nÄ± bu dÃ¼nyaya bÄ±rakabilirsin.",
-      "KaranlÄ±ÄŸÄ± sonsuza dek kovarsÄ±n â€” ama sen sÃ¶neceksin.",
-      "Ya da Ä±ÅŸÄ±ÄŸÄ±nÄ± kendin iÃ§in saklayabilirsin.",
-      "DÃ¼nya karanlÄ±kta kalÄ±r, ama sen var olmaya devam edersin.",
-      "SeÃ§imini yap: Sola git â†’ FedakÃ¢rlÄ±k | SaÄŸa git â†’ Kendini Koru"
+      "Sonunda buradasın, küçük ışık.",
+      "Tüm parçaları topladın... ya da ne kadar bulabildiysen.",
+      "Şimdi bir seçim yapmalısın.",
+      "Işığını bu dünyaya bırakabilirsin.",
+      "Karanlığı sonsuza dek kovarsın — ama sen söneceksin.",
+      "Ya da ışığını kendin için saklayabilirsin.",
+      "Dünya karanlıkta kalır, ama sen var olmaya devam edersin.",
+      "Seçimini yap: Sola git → Fedakârlık | Sağa git → Kendini Koru"
     ],
     done:false, type:'source'});
   fillR(t,82,18,85,19,T.CHOICE_A);
@@ -515,7 +503,7 @@ function drawDlg() {
   wrapTxt(renderCtx,txt,14,HEIGHT-40,WIDTH-28,9);
   if (dlgChar>=dlgLines[dlgLine].length) {
     renderCtx.fillStyle='#889';
-    renderCtx.fillText('â–¼',WIDTH-20,HEIGHT-12);
+    renderCtx.fillText('▼',WIDTH-20,HEIGHT-12);
   }
   renderCtx.restore();
 }
@@ -531,14 +519,14 @@ function wrapTxt(c,text,x,y,mw,lh) {
 }
 
 const crystDlg = [
-  ["Fragman 1: Bir zamanlar bu dÃ¼nya Ä±ÅŸÄ±kla doluydu.","Her canlÄ± kendi parÄ±ltÄ±sÄ±nÄ± taÅŸÄ±rdÄ±.","Ama bir gÃ¼n... karanlÄ±k geldi ve her ÅŸeyi yuttu."],
-  ["Fragman 2: KaranlÄ±k yavaÅŸ yavaÅŸ yayÄ±ldÄ±.","Ã–nce gÃ¶lgeler uzadÄ±, sonra gece hiÃ§ bitmedi.","Ä°nsanlar Ä±ÅŸÄ±klarÄ±nÄ± kaybettiler â€” birer birer sÃ¶ndÃ¼ler."],
-  ["Fragman 3: KÃ¶yler terk edildi.","Ä°nsanlar karanlÄ±ktan kaÃ§tÄ± ama gidecek yer kalmamÄ±ÅŸtÄ±.","Sadece bir efsane kaldÄ± â€” Son IÅŸÄ±k hakkÄ±nda."],
-  ["Fragman 4: Efsaneye gÃ¶re, dÃ¼nyanÄ±n derinliklerinde bir Kaynak var.","Oraya ulaÅŸan son Ä±ÅŸÄ±k, karanlÄ±ÄŸÄ± ebediyen kovabilir.","Ama bunun bir bedeli var..."],
-  ["Fragman 5: Madenler bir zamanlar kristal Ã§Ä±karÄ±rdÄ±.","Kristaller Ä±ÅŸÄ±ÄŸÄ± depolardÄ±, gÃ¼neÅŸten bile gÃ¼Ã§lÃ¼.","Åimdi sadece sÃ¶nmÃ¼ÅŸ parÃ§alar kaldÄ± â€” ama hafÄ±zalarÄ± hÃ¢lÃ¢ diri."],
-  ["Fragman 6: UÃ§urumun Ã¶tesinde hava farklÄ±ydÄ±.","RÃ¼zgÃ¢r eski ÅŸarkÄ±lar fÄ±sÄ±ldÄ±yordu.","Bir zamanlar burada gÃ¼neÅŸten yapÄ±lma bir kÃ¶prÃ¼ varmÄ±ÅŸ."],
-  ["Fragman 7: Kaynak yaklaÅŸÄ±yor, hissedebiliyorum.","Kristallerin parÄ±ltÄ±sÄ± yoÄŸunlaÅŸÄ±yor.","Ä°Ã§imde bir ses: 'HazÄ±r mÄ±sÄ±n bedeli Ã¶demeye?'"],
-  ["Fragman 8: Son kristal â€” tÃ¼m parÃ§alar birleÅŸiyor.","HikÃ¢ye tamamlanÄ±yor. ArtÄ±k gerÃ§eÄŸi biliyorum.","SeÃ§im zamanÄ± geldi. Ne yapacaÄŸÄ±m bana kalmÄ±ÅŸ."]
+  ["Fragman 1: Bir zamanlar bu dünya ışıkla doluydu.","Her canlı kendi parıltısını taşırdı.","Ama bir gün... karanlık geldi ve her şeyi yuttu."],
+  ["Fragman 2: Karanlık yavaş yavaş yayıldı.","Önce gölgeler uzadı, sonra gece hiç bitmedi.","İnsanlar ışıklarını kaybettiler — birer birer söndüler."],
+  ["Fragman 3: Köyler terk edildi.","İnsanlar karanlıktan kaçtı ama gidecek yer kalmamıştı.","Sadece bir efsane kaldı — Son Işık hakkında."],
+  ["Fragman 4: Efsaneye göre, dünyanın derinliklerinde bir Kaynak var.","Oraya ulaşan son ışık, karanlığı ebediyen kovabilir.","Ama bunun bir bedeli var..."],
+  ["Fragman 5: Madenler bir zamanlar kristal çıkarırdı.","Kristaller ışığı depolardı, güneşten bile güçlü.","Şimdi sadece sönmüş parçalar kaldı — ama hafızaları hâlâ diri."],
+  ["Fragman 6: Uçurumun ötesinde hava farklıydı.","Rüzgâr eski şarkılar fısıldıyordu.","Bir zamanlar burada güneşten yapılma bir köprü varmış."],
+  ["Fragman 7: Kaynak yaklaşıyor, hissedebiliyorum.","Kristallerin parıltısı yoğunlaşıyor.","İçimde bir ses: 'Hazır mısın bedeli ödemeye?'"],
+  ["Fragman 8: Son kristal — tüm parçalar birleşiyor.","Hikâye tamamlanıyor. Artık gerçeği biliyorum.","Seçim zamanı geldi. Ne yapacağım bana kalmış."]
 ];
 
 function drawParallax(lvl) {
@@ -609,14 +597,8 @@ function drawTiles(lvl) {
           renderCtx.fillRect(sx + x, sy + TILE - cut, 1, cut);
         }
       }
-      if (isLeft) {
-        renderCtx.fillStyle = '#0d0b17';
-        renderCtx.fillRect(sx, sy, 1, TILE);
-      }
-      if (isRight) {
-        renderCtx.fillStyle = '#0d0b17';
-        renderCtx.fillRect(sx + TILE - 1, sy, 1, TILE);
-      }
+      if (isLeft) { renderCtx.fillStyle = '#0d0b17'; renderCtx.fillRect(sx, sy, 1, TILE); }
+      if (isRight) { renderCtx.fillStyle = '#0d0b17'; renderCtx.fillRect(sx + TILE - 1, sy, 1, TILE); }
       if (isTop) {
         const mossColor = '#00a877';
         const mossHighlight = '#4df2c1';
@@ -630,9 +612,7 @@ function drawTiles(lvl) {
         renderCtx.fillStyle = mossHighlight;
         renderCtx.fillRect(sx, sy, TILE, 1);
         for (let x = 0; x < TILE; x += 2) {
-          if ((c + x) % 3 === 0) {
-            renderCtx.fillRect(sx + x, sy + 1, 1, 1);
-          }
+          if ((c + x) % 3 === 0) renderCtx.fillRect(sx + x, sy + 1, 1, 1);
         }
       }
     } else if (tile===T.PLATFORM) {
@@ -796,7 +776,6 @@ function drawLighting() {
 
 function drawDeco(lvl) {
   if (currentLevel===0) {
-    renderCtx.fillStyle='#0a1510';
     for (let i=0;i<18;i++) {
       const tx=i*55-(cam.x*0.65)%55;
       const th=25+Math.sin(i*2.1)*10;
@@ -841,7 +820,7 @@ function drawHUD() {
   renderCtx.save();
   renderCtx.fillStyle='#99aabb'; renderCtx.font='6px "Press Start 2P",monospace';
   renderCtx.fillText(`Fragman: ${fragments}/${totalFragments}`,4,10);
-  const names=['UyanÄ±ÅŸ','Terk EdilmiÅŸ KÃ¶y','UnutulmuÅŸ Madenler','YankÄ±lanan UÃ§urum','Kaynak'];
+  const names=['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'];
   renderCtx.fillStyle='#556'; renderCtx.fillText(names[currentLevel],4,19);
   renderCtx.restore();
 }
@@ -853,7 +832,7 @@ function drawChoices() {
   renderCtx.save(); renderCtx.font='7px "Press Start 2P",monospace';
   const lx=83*TILE-cam.x, ly=16*TILE-cam.y;
   renderCtx.fillStyle=`rgba(80,160,255,${0.6+Math.sin(frameCount*0.04)*0.3})`;
-  renderCtx.fillText('FedakÃ¢rlÄ±k',Math.floor(lx-6),Math.floor(ly));
+  renderCtx.fillText('Fedakârlık',Math.floor(lx-6),Math.floor(ly));
   renderCtx.fillText('[E]',Math.floor(lx+2),Math.floor(ly+10));
   const rx=100*TILE-cam.x, ry=16*TILE-cam.y;
   renderCtx.fillStyle=`rgba(255,140,80,${0.6+Math.sin(frameCount*0.04)*0.3})`;
@@ -986,6 +965,60 @@ function updateFade() {
 }
 function drawFade() { if(fadeAlpha>0){renderCtx.save();renderCtx.globalAlpha=fadeAlpha;renderCtx.fillStyle='#000';renderCtx.fillRect(0,0,WIDTH,HEIGHT);renderCtx.restore();} }
 
+// --- FLICKER DURUMU (global, drawMenu dışında tutulur) ---
+const flicker = {
+  phase: 0,       // 0=normal, 1=kesinti
+  timer: 0,
+  nextAt: 90 + Math.floor(Math.random() * 130),
+  alpha: 1,
+  offsetX: 0,
+  type: 'rapid',  // 'rapid' | 'blackout' | 'glitch'
+  dur: 3,
+  glitchLine: 0
+};
+
+function updateFlicker() {
+  flicker.timer++;
+  if (flicker.phase === 0) {
+    // Normal: alpha'yı 1'e çek, offsetX'i sıfırla
+    flicker.alpha += (1 - flicker.alpha) * 0.18;
+    flicker.offsetX *= 0.75;
+    if (flicker.timer >= flicker.nextAt) {
+      flicker.phase = 1;
+      flicker.timer = 0;
+      // Kesinti türünü seç
+      const r = Math.random();
+      flicker.type = r < 0.35 ? 'blackout' : r < 0.65 ? 'rapid' : 'glitch';
+      flicker.dur = flicker.type === 'blackout' ? 4 + Math.floor(Math.random() * 9)
+                  : flicker.type === 'glitch'   ? 5 + Math.floor(Math.random() * 7)
+                  :                               2 + Math.floor(Math.random() * 4);
+      flicker.glitchLine = Math.floor(Math.random() * 3);
+    }
+  } else {
+    // Kesinti aktif
+    if (flicker.type === 'blackout') {
+      flicker.alpha = flicker.timer % 2 === 0 ? 0.0 : 0.12;
+    } else if (flicker.type === 'rapid') {
+      flicker.alpha = flicker.timer % 2 === 0 ? 0.85 : 0.08;
+    } else { // glitch
+      flicker.alpha = 0.65 + Math.sin(flicker.timer * 2.1) * 0.35;
+      flicker.offsetX = (Math.random() - 0.5) * 7;
+    }
+    if (flicker.timer >= flicker.dur) {
+      // %40 ihtimalle ard arda ikinci kısa titreme (sadece rapid/blackout)
+      if (Math.random() < 0.4 && flicker.type !== 'glitch') {
+        flicker.timer = 0;
+        flicker.dur = 1 + Math.floor(Math.random() * 3);
+      } else {
+        flicker.phase = 0;
+        flicker.timer = 0;
+        flicker.nextAt = 55 + Math.floor(Math.random() * 200);
+        flicker.offsetX = 0;
+      }
+    }
+  }
+}
+
 function updateMenu() {
   if (showCtrl) { if(jp['Escape']||jp['Enter']||jp['Space']) showCtrl=false; return; }
   if (showSettings) { updateSettings(); return; }
@@ -1013,57 +1046,68 @@ function drawMenu() {
   drawParts(0,0);
   renderCtx.save();
 
-  // --- BAÅLIK: THE / LAST / LIGHT â€” alt alta, 20 derece sola yatÄ±k ---
-  renderCtx.save();
-  renderCtx.translate(WIDTH/2, 42);
-  renderCtx.rotate(-20 * Math.PI / 180);
+  // --- BAŞLIK: THE / LAST / LIGHT — elektrik kesintisi efekti ---
+  updateFlicker();
+  const fk = flicker;
   const titleLines = ['THE', 'LAST', 'LIGHT'];
   const lineH = 20;
+
+  renderCtx.save();
+  renderCtx.translate(WIDTH/2 + fk.offsetX, 42);
+  renderCtx.rotate(-20 * Math.PI / 180);
+
   titleLines.forEach(function(line, i) {
-    // LAST ortada, daha parlak
-    if (i === 1) {
-      renderCtx.font = '15px "Press Start 2P",monospace';
-      renderCtx.fillStyle = '#cceeff';
-    } else {
-      renderCtx.font = '12px "Press Start 2P",monospace';
-      renderCtx.fillStyle = '#7799bb';
+    const isMiddle = i === 1;
+    renderCtx.font = (isMiddle ? '15px' : '12px') + ' "Press Start 2P",monospace';
+
+    // Glitch satırına özel kayma
+    let la = fk.alpha;
+    let lox = 0;
+    if (fk.phase === 1 && fk.type === 'glitch' && i === fk.glitchLine) {
+      la = Math.random() < 0.5 ? 1.0 : 0.15;
+      lox = (Math.random() - 0.5) * 9;
     }
+
     const lw = renderCtx.measureText(line).width;
-    const tx = -lw / 2;
-    const ty = i * lineH;
-    const baseColor = renderCtx.fillStyle;
-    const glitching = frameCount % 58 < 7 || Math.random() < 0.035;
+    const bx = -lw / 2 + lox;
+    const by = i * lineH;
 
-    if (glitching) {
-      renderCtx.globalAlpha = 0.65;
-      renderCtx.fillStyle = '#ff4466';
-      renderCtx.fillText(line, tx - 2, ty);
-      renderCtx.fillStyle = '#44ddff';
-      renderCtx.fillText(line, tx + 2, ty + 1);
-      renderCtx.globalAlpha = 1;
+    // Elektrik mavi halo (normal fazda hafif, kesintide parlayan)
+    if (la > 0.3) {
+      renderCtx.globalAlpha = la * (fk.phase === 1 ? 0.35 : 0.12);
+      renderCtx.fillStyle = '#33aaff';
+      renderCtx.fillText(line, bx + 1, by + 1);
+      renderCtx.fillText(line, bx - 1, by - 1);
     }
 
-    renderCtx.fillStyle = baseColor;
-    renderCtx.fillText(line, tx, ty);
+    // Glitch renk ayrışması (kırmızı + cyan katmanları)
+    if (fk.phase === 1 && fk.type === 'glitch' && i === fk.glitchLine) {
+      renderCtx.globalAlpha = la * 0.6;
+      renderCtx.fillStyle = '#ff4422';
+      renderCtx.fillText(line, bx - 2, by);
+      renderCtx.globalAlpha = la * 0.5;
+      renderCtx.fillStyle = '#22ffee';
+      renderCtx.fillText(line, bx + 2, by);
+    }
 
-    if (glitching) {
-      for (let g = 0; g < 2; g++) {
-        const sliceY = ty - 12 + Math.random() * 18;
-        const sliceH = 2 + Math.random() * 3;
-        const sliceX = tx + (Math.random() - 0.5) * 8;
-        renderCtx.save();
-        renderCtx.beginPath();
-        renderCtx.rect(tx - 6, sliceY, lw + 12, sliceH);
-        renderCtx.clip();
-        renderCtx.fillStyle = Math.random() < 0.5 ? '#cceeff' : '#7799bb';
-        renderCtx.fillText(line, sliceX, ty);
-        renderCtx.restore();
-      }
+    // Ana metin
+    renderCtx.globalAlpha = la;
+    renderCtx.fillStyle = isMiddle ? '#cceeff' : '#7799bb';
+    renderCtx.fillText(line, bx, by);
+
+    // "LAST" satırı üzerinde ince parlama çizgisi (tam parlak anında)
+    if (isMiddle && la > 0.85 && fk.phase === 0) {
+      renderCtx.globalAlpha = (la - 0.85) * 1.2;
+      renderCtx.fillStyle = '#aaddff';
+      renderCtx.fillRect(bx, by - 13, lw, 1);
     }
   });
-  renderCtx.restore();
 
-  // Alt yazÄ± ve menÃ¼ seÃ§enekleri
+  renderCtx.globalAlpha = 1;
+  renderCtx.restore();
+  // --- BAŞLIK SONU ---
+
+  // Alt yazı ve menü seçenekleri
   renderCtx.fillStyle='#334'; renderCtx.font='6px "Press Start 2P",monospace';
   const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
   renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,108);
@@ -1097,9 +1141,9 @@ function drawSettingsScreen() {
   renderCtx.fillRect(kx,by+2,8,8);
   renderCtx.fillStyle=soundEnabled?'#aaddff':'#778';
   renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText(soundEnabled?'AÃ‡IK':'KAPALI',bx+2,by+10);
+  renderCtx.fillText(soundEnabled?'AÇIK':'KAPALI',bx+2,by+10);
   renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText('Enter/Space: deÄŸiÅŸtir',34,90);
+  renderCtx.fillText('Enter/Space: değiştir',34,90);
   renderCtx.fillText('ESC: geri',34,103);
 }
 
@@ -1109,11 +1153,11 @@ function drawCtrlScreen() {
   renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('KONTROLLER',70,36);
   renderCtx.font='6px "Press Start 2P",monospace'; renderCtx.fillStyle='#778';
-  const c=['Hareket: Ok TuÅŸlarÄ± / WASD','ZÄ±pla: Space (basÄ±lÄ± tut = yÃ¼ksek)','EtkileÅŸim: E','Duraklat: ESC','','Geri: ESC / Enter'];
+  const c=['Hareket: Ok Tuşları / WASD','Zıpla: Space (basılı tut = yüksek)','Etkileşim: E','Duraklat: ESC','','Geri: ESC / Enter'];
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
 
-const introTxts=["Bir zamanlar dÃ¼nya Ä±ÅŸÄ±kla doluydu...","Ama karanlÄ±k geldi ve her ÅŸeyi yuttu.","Åimdi sadece bir Ä±ÅŸÄ±k kaldÄ±.","Sen.",""];
+const introTxts=["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""];
 function updateIntro() {
   introTimer++;
   if (introTimer>130||jp['Space']||jp['Enter']) {
@@ -1144,15 +1188,14 @@ function drawPause() {
   renderCtx.fillStyle='rgba(0,0,0,0.82)'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
   renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('DURAKLAT',WIDTH/2-34,55);
-  renderCtx.font='7px "Press Start 2P",monospace';
-  ['Devam Et','MenÃ¼ye DÃ¶n'].forEach((it,i)=>{
+  ['Devam Et','Menüye Dön'].forEach((it,i)=>{
     renderCtx.fillStyle=i===pauseSel?'#fff':'#556';
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
   });
 }
 
-const endSacrifice=["IÅŸÄ±ÄŸÄ±nÄ± bÄ±raktÄ±n.","KaranlÄ±k Ã§ekilmeye baÅŸladÄ±...","DÃ¼nya yeniden aydÄ±nlandÄ±.","Ama sen... sÃ¶nÃ¼yorsun.","Son nefesinde gÃ¼lÃ¼msedin.","Ã‡Ã¼nkÃ¼ biliyordun â€”","bir Ä±ÅŸÄ±k sÃ¶nse bile,","bÄ±raktÄ±ÄŸÄ± parÄ±ltÄ± sonsuza dek kalÄ±r.","","SON","â€” FedakÃ¢rlÄ±k Sonu â€”"];
-const endSelfish=["IÅŸÄ±ÄŸÄ±nÄ± kendin iÃ§in sakladÄ±n.","DÃ¼nya karanlÄ±kta kalmaya devam etti.","Ama sen... varsÄ±n. YalnÄ±z.","Sonsuz bir gecede parÄ±ldÄ±yorsun.","Kimse gÃ¶rmÃ¼yor, kimse bilmiyor.","Belki bir gÃ¼n...","baÅŸka bir Ä±ÅŸÄ±k doÄŸar.","Belki o, senin yapamadÄ±ÄŸÄ±nÄ± yapar.","","SON","â€” Bencillik Sonu â€”"];
+const endSacrifice=["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"];
+const endSelfish=["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"];
 
 function updateEnding() { endingTimer++; }
 function drawEnding() {
@@ -1180,7 +1223,7 @@ function drawEnding() {
   if (endingTimer>speed*Math.ceil(texts.length/3)+150) {
     renderCtx.globalAlpha=0.7+Math.sin(frameCount*0.05)*0.3;
     renderCtx.fillStyle='#778'; renderCtx.font='6px "Press Start 2P",monospace';
-    renderCtx.fillText('MenÃ¼ye dÃ¶nmek iÃ§in Enter',WIDTH/2-62,HEIGHT-14);
+    renderCtx.fillText('Menüye dönmek için Enter',WIDTH/2-62,HEIGHT-14);
     renderCtx.globalAlpha=1;
     if (jp['Enter']||jp['Space']) {
       gameState='menu'; endingTimer=0; fragments=0;
@@ -1246,7 +1289,6 @@ function loop(time) {
 
   drawFade();
   clearJP();
-
   ctx.drawImage(renderCanvas,0,0);
 }
 
@@ -1265,22 +1307,17 @@ function init() {
   canvas.width=WIDTH; canvas.height=HEIGHT;
   ctx=canvas.getContext('2d');
   ctx.imageSmoothingEnabled=false;
-
   renderCanvas=document.createElement('canvas');
   renderCanvas.width=WIDTH; renderCanvas.height=HEIGHT;
   renderCtx=renderCanvas.getContext('2d');
   renderCtx.imageSmoothingEnabled=false;
-
   lightCanvas=document.createElement('canvas');
   lightCanvas.width=WIDTH; lightCanvas.height=HEIGHT;
   lightCtx=lightCanvas.getContext('2d');
-
   window.addEventListener('resize',resize);
   resize();
-
   clearJP();
   for (let k in keys) delete keys[k];
-
   gameState = 'menu';
   lastTime = performance.now();
   requestAnimationFrame(loop);
@@ -1288,11 +1325,7 @@ function init() {
 
 function startWhenReady() {
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function() {
-      setTimeout(init, 100);
-    }).catch(function() {
-      setTimeout(init, 100);
-    });
+    document.fonts.ready.then(function() { setTimeout(init, 100); }).catch(function() { setTimeout(init, 100); });
   } else {
     setTimeout(init, 500);
   }
@@ -1303,7 +1336,6 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 } else {
   document.addEventListener('DOMContentLoaded', startWhenReady);
 }
-
 setTimeout(function() { if (!window.gameInitialized) init(); }, 3000);
 
 })();
