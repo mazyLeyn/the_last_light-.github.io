@@ -289,11 +289,16 @@ function drawParts(cx,cy) {
   renderCtx.restore();
 }
 
-const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32};
+const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32,
+  squash:0,       // >0 = squash (landing), <0 = stretch (jumping)
+  wasGrounded:false,
+  prevVy:0
+};
 
 function resetPlayer(x,y) {
   player.x=x;player.y=y;player.vx=0;player.vy=0;
   player.grounded=false;player.coyote=0;player.jbuf=0;
+  player.squash=0;player.wasGrounded=false;player.prevVy=0;
 }
 
 const cam = {x:0,y:0};
@@ -704,24 +709,46 @@ function drawDoor(lvl) {
 }
 
 function drawPlayer() {
-  const sx=Math.floor(player.x-cam.x), sy=Math.floor(player.y-cam.y);
+  // Squash & Stretch boyutları hesapla
+  let rw, rh, offX, offY;
+  if (player.squash > 0) {
+    // Squash: yatayda genişle, dikeyde küçül (yere iniş)
+    const t = player.squash / 8;
+    rw = Math.round(5 + 2 * t);   // 5 → 7
+    rh = Math.round(7 - 2 * t);   // 7 → 5
+  } else if (player.squash < 0) {
+    // Stretch: dikeyde uzat, yatayda daralt (zıplama)
+    rw = 4;
+    rh = 8;
+  } else {
+    rw = 5; rh = 7;
+  }
+  // Ayaklar zemine sabit kalsın diye y ofset
+  offX = Math.floor((5 - rw) / 2);
+  offY = 7 - rh;
+
+  const sx=Math.floor(player.x-cam.x)+offX, sy=Math.floor(player.y-cam.y)+offY;
   renderCtx.save();
   renderCtx.globalCompositeOperation='lighter';
   const p=Math.sin(frameCount*0.07)*0.12+0.85;
   renderCtx.globalAlpha=0.25*p;
   renderCtx.fillStyle='#88bbff';
-  renderCtx.beginPath(); renderCtx.arc(sx+3,sy+4,7,0,Math.PI*2); renderCtx.fill();
+  renderCtx.beginPath(); renderCtx.arc(sx+rw/2,sy+rh/2,7,0,Math.PI*2); renderCtx.fill();
   renderCtx.globalAlpha=0.45*p;
   renderCtx.fillStyle='#cceeff';
-  renderCtx.beginPath(); renderCtx.arc(sx+3,sy+4,4,0,Math.PI*2); renderCtx.fill();
+  renderCtx.beginPath(); renderCtx.arc(sx+rw/2,sy+rh/2,4,0,Math.PI*2); renderCtx.fill();
   renderCtx.restore();
+  // Gövde
   renderCtx.fillStyle='#eef8ff';
-  renderCtx.fillRect(sx+1,sy+1,3,5);
+  renderCtx.fillRect(sx+1,sy+1,rw-2,rh-2);
   renderCtx.fillStyle='#ffffff';
-  renderCtx.fillRect(sx+2,sy+2,1,3);
-  renderCtx.fillStyle='#6699cc';
-  renderCtx.fillRect(sx+1,sy+2,1,1);
-  renderCtx.fillRect(sx+3,sy+2,1,1);
+  renderCtx.fillRect(sx+Math.floor(rw/2)-1,sy+2,1,rh-4);
+  // Gözler (sadece normal/stretch modda göster)
+  if (rw >= 4) {
+    renderCtx.fillStyle='#6699cc';
+    renderCtx.fillRect(sx+1,sy+2,1,1);
+    renderCtx.fillRect(sx+rw-2,sy+2,1,1);
+  }
   if (frameCount%4===0&&(player.vx!==0||!player.grounded))
     emit(player.x+2,player.y+6,(Math.random()-0.5)*0.15,0.15,18,1,'#6699bb','dust');
 }
@@ -896,6 +923,26 @@ function updatePlay() {
   player.vy+=GRAVITY; if(player.vy>MAX_FALL) player.vy=MAX_FALL;
   player.x+=player.vx; resolveX(lvl);
   player.y+=player.vy; resolveY(lvl);
+
+  // Squash & Stretch
+  const justLanded = !player.wasGrounded && player.grounded;
+  if (justLanded && player.prevVy > 1.5) {
+    // Sert iniş → squash (yatayda genişle), şiddet hıza bağlı
+    player.squash = Math.min(8, Math.round(player.prevVy * 1.8));
+  } else if (player.grounded && player.squash < 0) {
+    // Yere değdiğinde stretch bitir
+    player.squash = 0;
+  }
+  // Squash sayacını azalt
+  if (player.squash > 0) player.squash--;
+  // Stretch: havadayken ve yukarı çıkarken
+  if (!player.grounded && player.vy < -0.5 && player.squash <= 0) {
+    player.squash = -1;
+  } else if (player.grounded && player.squash === -1) {
+    player.squash = 0;
+  }
+  player.wasGrounded = player.grounded;
+  player.prevVy = player.vy;
   if (player.y>lvl.h*TILE+30) { respawn(); return; }
   const hx=player.x+player.w/2, hy=player.y+player.h;
   if (getTile(lvl.tiles,hx,hy)===T.HAZARD||getTile(lvl.tiles,hx,hy-1)===T.HAZARD) { respawn(); return; }
