@@ -63,7 +63,8 @@ let fadeAlpha = 0, fadeDir = 0, fadeCallback = null;
 let endingType = '';
 let lastTime = 0, frameCount = 0;
 let paused = false, pauseSel = 0;
-let menuSel = 0, showCtrl = false;
+let menuSel = 0, showCtrl = false, showSettings = false;
+let soundEnabled = true;
 let introStep = 0, introTimer = 0;
 let endingTimer = 0;
 
@@ -929,33 +930,75 @@ function drawFade() { if(fadeAlpha>0){renderCtx.save();renderCtx.globalAlpha=fad
 // --- MENU ---
 function updateMenu() {
   if (showCtrl) { if(jp['Escape']||jp['Enter']||jp['Space']) showCtrl=false; return; }
-  if (jp['ArrowDown']||jp['KeyS']) menuSel=(menuSel+1)%2;
-  if (jp['ArrowUp']||jp['KeyW']) menuSel=(menuSel+1)%2;
+  if (showSettings) { updateSettings(); return; }
+  if (jp['ArrowDown']||jp['KeyS']) menuSel=(menuSel+1)%3;
+  if (jp['ArrowUp']||jp['KeyW']) menuSel=(menuSel+2)%3;
   if (jp['Enter']||jp['Space']) {
     initAudio();
     if (menuSel===0) startFade(1,()=>{gameState='intro';introStep=0;introTimer=0;});
-    else showCtrl=true;
+    else if (menuSel===1) showCtrl=true;
+    else showSettings=true;
+  }
+}
+
+function updateSettings() {
+  if (jp['Escape']) { showSettings=false; return; }
+  // Ses aç/kapat: Enter, Space veya sol/sağ
+  if (jp['Enter']||jp['Space']||jp['ArrowLeft']||jp['ArrowRight']||jp['KeyA']||jp['KeyD']) {
+    soundEnabled=!soundEnabled;
+    if (masterGain) masterGain.gain.value = soundEnabled ? 0.6 : 0;
   }
 }
 
 function drawMenu() {
   renderCtx.fillStyle='#030306'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
-  // Arka plan parcaciklari
   if (frameCount%4===0) emit(Math.random()*WIDTH,HEIGHT+2,(Math.random()-0.5)*0.2,-Math.random()*0.6-0.3,55,1,'#3344aa','dust');
   drawParts(0,0);
   renderCtx.save();
   renderCtx.fillStyle='#99bbdd'; renderCtx.font='12px "Press Start 2P",monospace';
-  renderCtx.fillText('Son Işık',WIDTH/2-44,52);
+  const titleW=renderCtx.measureText('Son Işık').width;
+  renderCtx.fillText('Son Işık',WIDTH/2-titleW/2,52);
   renderCtx.fillStyle='#445'; renderCtx.font='6px "Press Start 2P",monospace';
-  renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-55,66);
-  const items=['Başla','Kontroller'];
+  const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
+  renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,66);
+  const items=['Oyna','Kontroller','Ayarlar'];
   renderCtx.font='7px "Press Start 2P",monospace';
   items.forEach((it,i)=>{
     renderCtx.fillStyle=i===menuSel?'#dde':'#556';
-    renderCtx.fillText((i===menuSel?'> ':'  ')+it,WIDTH/2-36,100+i*16);
+    const tw=renderCtx.measureText('> '+it).width;
+    renderCtx.fillText((i===menuSel?'> ':'  ')+it,WIDTH/2-tw/2,96+i*18);
   });
   renderCtx.restore();
   if (showCtrl) drawCtrlScreen();
+  if (showSettings) drawSettingsScreen();
+}
+
+function drawSettingsScreen() {
+  renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
+  renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
+  renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
+  const titleW=renderCtx.measureText('AYARLAR').width;
+  renderCtx.fillText('AYARLAR',WIDTH/2-titleW/2,36);
+  // Ses satırı
+  renderCtx.font='6px "Press Start 2P",monospace';
+  renderCtx.fillStyle='#dde';
+  renderCtx.fillText('Ana Ses',34,62);
+  // Toggle kutusu
+  const bx=WIDTH-62, by=54, bw=40, bh=12;
+  renderCtx.fillStyle=soundEnabled?'#2255aa':'#222';
+  renderCtx.fillRect(bx,by,bw,bh);
+  renderCtx.strokeStyle='#556'; renderCtx.strokeRect(bx,by,bw,bh);
+  // Knob
+  const kx=soundEnabled?bx+bw-10:bx+2;
+  renderCtx.fillStyle=soundEnabled?'#aaddff':'#556';
+  renderCtx.fillRect(kx,by+2,8,8);
+  renderCtx.fillStyle=soundEnabled?'#aaddff':'#778';
+  renderCtx.font='5px "Press Start 2P",monospace';
+  renderCtx.fillText(soundEnabled?'AÇIK':'KAPALI',bx+2,by+10);
+  // Alt bilgi
+  renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
+  renderCtx.fillText('Enter/Space: değiştir',34,90);
+  renderCtx.fillText('ESC: geri',34,103);
 }
 
 function drawCtrlScreen() {
