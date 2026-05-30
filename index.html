@@ -64,12 +64,6 @@ let menuSel = 0, showCtrl = false, showSettings = false;
 let soundEnabled = true;
 let introStep = 0, introTimer = 0;
 let endingTimer = 0;
-let logoReady = false;
-
-const logoImage = new Image();
-logoImage.onload = () => { logoReady = true; };
-logoImage.onerror = () => { logoReady = false; };
-logoImage.src = 'logo.png';
 
 const keys = {};
 const jp = {};
@@ -358,7 +352,7 @@ levels.push(mkLevel(130,23,(lvl,t)=>{
   lvl.cps.push({x:50*TILE,y:18*TILE});
   lvl.cps.push({x:90*TILE,y:14*TILE});
   lvl.npcs.push({x:18*TILE,y:13*TILE,w:8,h:20,
-    lines:["Uyan, küçük ışık...","Sen bu dünyanın son parıltısısın.","Karanlık her yeri sardı. Ama sen hâlâ parlıyorsun.","İlerle... Kristalleri bul.","Onlar sana geçmişi ve yolu gösterecek.","Dikkatli ol — karanlık derin çukurlar açtı."],
+    lines:["Uyan, kÃ¼Ã§Ã¼k Ä±ÅŸÄ±k...","Sen bu dÃ¼nyanÄ±n son parÄ±ltÄ±sÄ±sÄ±n.","KaranlÄ±k her yeri sardÄ±. Ama sen hÃ¢lÃ¢ parlÄ±yorsun.","Ä°lerle... Kristalleri bul.","Onlar sana geÃ§miÅŸi ve yolu gÃ¶sterecek.","Dikkatli ol â€” karanlÄ±k derin Ã§ukurlar aÃ§tÄ±."],
     done:false, type:'tree'});
   lvl.door={x:125*TILE,y:17*TILE};
 }));
@@ -473,14 +467,14 @@ levels.push(mkLevel(110,23,(lvl,t)=>{
   lvl.cps.push({x:66*TILE,y:10*TILE});
   lvl.npcs.push({x:92*TILE,y:17*TILE,w:8,h:20,
     lines:[
-      "Sonunda buradasın, küçük ışık.",
-      "Tüm parçaları topladın... ya da ne kadar bulabildiysen.",
-      "Şimdi bir seçim yapmalısın.",
-      "Işığını bu dünyaya bırakabilirsin.",
-      "Karanlığı sonsuza dek kovarsın — ama sen söneceksin.",
-      "Ya da ışığını kendin için saklayabilirsin.",
-      "Dünya karanlıkta kalır, ama sen var olmaya devam edersin.",
-      "Seçimini yap: Sola git → Fedakârlık | Sağa git → Kendini Koru"
+      "Sonunda buradasÄ±n, kÃ¼Ã§Ã¼k Ä±ÅŸÄ±k.",
+      "TÃ¼m parÃ§alarÄ± topladÄ±n... ya da ne kadar bulabildiysen.",
+      "Åimdi bir seÃ§im yapmalÄ±sÄ±n.",
+      "IÅŸÄ±ÄŸÄ±nÄ± bu dÃ¼nyaya bÄ±rakabilirsin.",
+      "KaranlÄ±ÄŸÄ± sonsuza dek kovarsÄ±n â€” ama sen sÃ¶neceksin.",
+      "Ya da Ä±ÅŸÄ±ÄŸÄ±nÄ± kendin iÃ§in saklayabilirsin.",
+      "DÃ¼nya karanlÄ±kta kalÄ±r, ama sen var olmaya devam edersin.",
+      "SeÃ§imini yap: Sola git â†’ FedakÃ¢rlÄ±k | SaÄŸa git â†’ Kendini Koru"
     ],
     done:false, type:'source'});
   fillR(t,82,18,85,19,T.CHOICE_A);
@@ -521,7 +515,7 @@ function drawDlg() {
   wrapTxt(renderCtx,txt,14,HEIGHT-40,WIDTH-28,9);
   if (dlgChar>=dlgLines[dlgLine].length) {
     renderCtx.fillStyle='#889';
-    renderCtx.fillText('▼',WIDTH-20,HEIGHT-12);
+    renderCtx.fillText('â–¼',WIDTH-20,HEIGHT-12);
   }
   renderCtx.restore();
 }
@@ -537,14 +531,14 @@ function wrapTxt(c,text,x,y,mw,lh) {
 }
 
 const crystDlg = [
-  ["Fragman 1: Bir zamanlar bu dünya ışıkla doluydu.","Her canlı kendi parıltısını taşırdı.","Ama bir gün... karanlık geldi ve her şeyi yuttu."],
-  ["Fragman 2: Karanlık yavaş yavaş yayıldı.","Önce gölgeler uzadı, sonra gece hiç bitmedi.","İnsanlar ışıklarını kaybettiler — birer birer söndüler."],
-  ["Fragman 3: Köyler terk edildi.","İnsanlar karanlıktan kaçtı ama gidecek yer kalmamıştı.","Sadece bir efsane kaldı — Son Işık hakkında."],
-  ["Fragman 4: Efsaneye göre, dünyanın derinliklerinde bir Kaynak var.","Oraya ulaşan son ışık, karanlığı ebediyen kovabilir.","Ama bunun bir bedeli var..."],
-  ["Fragman 5: Madenler bir zamanlar kristal çıkarırdı.","Kristaller ışığı depolardı, güneşten bile güçlü.","Şimdi sadece sönmüş parçalar kaldı — ama hafızaları hâlâ diri."],
-  ["Fragman 6: Uçurumun ötesinde hava farklıydı.","Rüzgâr eski şarkılar fısıldıyordu.","Bir zamanlar burada güneşten yapılma bir köprü varmış."],
-  ["Fragman 7: Kaynak yaklaşıyor, hissedebiliyorum.","Kristallerin parıltısı yoğunlaşıyor.","İçimde bir ses: 'Hazır mısın bedeli ödemeye?'"],
-  ["Fragman 8: Son kristal — tüm parçalar birleşiyor.","Hikâye tamamlanıyor. Artık gerçeği biliyorum.","Seçim zamanı geldi. Ne yapacağım bana kalmış."]
+  ["Fragman 1: Bir zamanlar bu dÃ¼nya Ä±ÅŸÄ±kla doluydu.","Her canlÄ± kendi parÄ±ltÄ±sÄ±nÄ± taÅŸÄ±rdÄ±.","Ama bir gÃ¼n... karanlÄ±k geldi ve her ÅŸeyi yuttu."],
+  ["Fragman 2: KaranlÄ±k yavaÅŸ yavaÅŸ yayÄ±ldÄ±.","Ã–nce gÃ¶lgeler uzadÄ±, sonra gece hiÃ§ bitmedi.","Ä°nsanlar Ä±ÅŸÄ±klarÄ±nÄ± kaybettiler â€” birer birer sÃ¶ndÃ¼ler."],
+  ["Fragman 3: KÃ¶yler terk edildi.","Ä°nsanlar karanlÄ±ktan kaÃ§tÄ± ama gidecek yer kalmamÄ±ÅŸtÄ±.","Sadece bir efsane kaldÄ± â€” Son IÅŸÄ±k hakkÄ±nda."],
+  ["Fragman 4: Efsaneye gÃ¶re, dÃ¼nyanÄ±n derinliklerinde bir Kaynak var.","Oraya ulaÅŸan son Ä±ÅŸÄ±k, karanlÄ±ÄŸÄ± ebediyen kovabilir.","Ama bunun bir bedeli var..."],
+  ["Fragman 5: Madenler bir zamanlar kristal Ã§Ä±karÄ±rdÄ±.","Kristaller Ä±ÅŸÄ±ÄŸÄ± depolardÄ±, gÃ¼neÅŸten bile gÃ¼Ã§lÃ¼.","Åimdi sadece sÃ¶nmÃ¼ÅŸ parÃ§alar kaldÄ± â€” ama hafÄ±zalarÄ± hÃ¢lÃ¢ diri."],
+  ["Fragman 6: UÃ§urumun Ã¶tesinde hava farklÄ±ydÄ±.","RÃ¼zgÃ¢r eski ÅŸarkÄ±lar fÄ±sÄ±ldÄ±yordu.","Bir zamanlar burada gÃ¼neÅŸten yapÄ±lma bir kÃ¶prÃ¼ varmÄ±ÅŸ."],
+  ["Fragman 7: Kaynak yaklaÅŸÄ±yor, hissedebiliyorum.","Kristallerin parÄ±ltÄ±sÄ± yoÄŸunlaÅŸÄ±yor.","Ä°Ã§imde bir ses: 'HazÄ±r mÄ±sÄ±n bedeli Ã¶demeye?'"],
+  ["Fragman 8: Son kristal â€” tÃ¼m parÃ§alar birleÅŸiyor.","HikÃ¢ye tamamlanÄ±yor. ArtÄ±k gerÃ§eÄŸi biliyorum.","SeÃ§im zamanÄ± geldi. Ne yapacaÄŸÄ±m bana kalmÄ±ÅŸ."]
 ];
 
 function drawParallax(lvl) {
@@ -847,7 +841,7 @@ function drawHUD() {
   renderCtx.save();
   renderCtx.fillStyle='#99aabb'; renderCtx.font='6px "Press Start 2P",monospace';
   renderCtx.fillText(`Fragman: ${fragments}/${totalFragments}`,4,10);
-  const names=['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'];
+  const names=['UyanÄ±ÅŸ','Terk EdilmiÅŸ KÃ¶y','UnutulmuÅŸ Madenler','YankÄ±lanan UÃ§urum','Kaynak'];
   renderCtx.fillStyle='#556'; renderCtx.fillText(names[currentLevel],4,19);
   renderCtx.restore();
 }
@@ -859,7 +853,7 @@ function drawChoices() {
   renderCtx.save(); renderCtx.font='7px "Press Start 2P",monospace';
   const lx=83*TILE-cam.x, ly=16*TILE-cam.y;
   renderCtx.fillStyle=`rgba(80,160,255,${0.6+Math.sin(frameCount*0.04)*0.3})`;
-  renderCtx.fillText('Fedakârlık',Math.floor(lx-6),Math.floor(ly));
+  renderCtx.fillText('FedakÃ¢rlÄ±k',Math.floor(lx-6),Math.floor(ly));
   renderCtx.fillText('[E]',Math.floor(lx+2),Math.floor(ly+10));
   const rx=100*TILE-cam.x, ry=16*TILE-cam.y;
   renderCtx.fillStyle=`rgba(255,140,80,${0.6+Math.sin(frameCount*0.04)*0.3})`;
@@ -1019,16 +1013,7 @@ function drawMenu() {
   drawParts(0,0);
   renderCtx.save();
 
-  if (logoReady) {
-    const maxLogoW = 160;
-    const maxLogoH = 74;
-    const logoScale = Math.min(maxLogoW / logoImage.width, maxLogoH / logoImage.height);
-    const logoW = logoImage.width * logoScale;
-    const logoH = logoImage.height * logoScale;
-    renderCtx.drawImage(logoImage, WIDTH / 2 - logoW / 2, 22, logoW, logoH);
-  } else {
-
-  // --- BAŞLIK: THE / LAST / LIGHT — alt alta, 20 derece sola yatık ---
+  // --- BAÅLIK: THE / LAST / LIGHT â€” alt alta, 20 derece sola yatÄ±k ---
   renderCtx.save();
   renderCtx.translate(WIDTH/2, 42);
   renderCtx.rotate(-20 * Math.PI / 180);
@@ -1044,12 +1029,41 @@ function drawMenu() {
       renderCtx.fillStyle = '#7799bb';
     }
     const lw = renderCtx.measureText(line).width;
-    renderCtx.fillText(line, -lw / 2, i * lineH);
+    const tx = -lw / 2;
+    const ty = i * lineH;
+    const baseColor = renderCtx.fillStyle;
+    const glitching = frameCount % 58 < 7 || Math.random() < 0.035;
+
+    if (glitching) {
+      renderCtx.globalAlpha = 0.65;
+      renderCtx.fillStyle = '#ff4466';
+      renderCtx.fillText(line, tx - 2, ty);
+      renderCtx.fillStyle = '#44ddff';
+      renderCtx.fillText(line, tx + 2, ty + 1);
+      renderCtx.globalAlpha = 1;
+    }
+
+    renderCtx.fillStyle = baseColor;
+    renderCtx.fillText(line, tx, ty);
+
+    if (glitching) {
+      for (let g = 0; g < 2; g++) {
+        const sliceY = ty - 12 + Math.random() * 18;
+        const sliceH = 2 + Math.random() * 3;
+        const sliceX = tx + (Math.random() - 0.5) * 8;
+        renderCtx.save();
+        renderCtx.beginPath();
+        renderCtx.rect(tx - 6, sliceY, lw + 12, sliceH);
+        renderCtx.clip();
+        renderCtx.fillStyle = Math.random() < 0.5 ? '#cceeff' : '#7799bb';
+        renderCtx.fillText(line, sliceX, ty);
+        renderCtx.restore();
+      }
+    }
   });
   renderCtx.restore();
-  }
 
-  // Alt yazı ve menü seçenekleri
+  // Alt yazÄ± ve menÃ¼ seÃ§enekleri
   renderCtx.fillStyle='#334'; renderCtx.font='6px "Press Start 2P",monospace';
   const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
   renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,108);
@@ -1083,9 +1097,9 @@ function drawSettingsScreen() {
   renderCtx.fillRect(kx,by+2,8,8);
   renderCtx.fillStyle=soundEnabled?'#aaddff':'#778';
   renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText(soundEnabled?'AÇIK':'KAPALI',bx+2,by+10);
+  renderCtx.fillText(soundEnabled?'AÃ‡IK':'KAPALI',bx+2,by+10);
   renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText('Enter/Space: değiştir',34,90);
+  renderCtx.fillText('Enter/Space: deÄŸiÅŸtir',34,90);
   renderCtx.fillText('ESC: geri',34,103);
 }
 
@@ -1095,11 +1109,11 @@ function drawCtrlScreen() {
   renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('KONTROLLER',70,36);
   renderCtx.font='6px "Press Start 2P",monospace'; renderCtx.fillStyle='#778';
-  const c=['Hareket: Ok Tuşları / WASD','Zıpla: Space (basılı tut = yüksek)','Etkileşim: E','Duraklat: ESC','','Geri: ESC / Enter'];
+  const c=['Hareket: Ok TuÅŸlarÄ± / WASD','ZÄ±pla: Space (basÄ±lÄ± tut = yÃ¼ksek)','EtkileÅŸim: E','Duraklat: ESC','','Geri: ESC / Enter'];
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
 
-const introTxts=["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""];
+const introTxts=["Bir zamanlar dÃ¼nya Ä±ÅŸÄ±kla doluydu...","Ama karanlÄ±k geldi ve her ÅŸeyi yuttu.","Åimdi sadece bir Ä±ÅŸÄ±k kaldÄ±.","Sen.",""];
 function updateIntro() {
   introTimer++;
   if (introTimer>130||jp['Space']||jp['Enter']) {
@@ -1131,14 +1145,14 @@ function drawPause() {
   renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('DURAKLAT',WIDTH/2-34,55);
   renderCtx.font='7px "Press Start 2P",monospace';
-  ['Devam Et','Menüye Dön'].forEach((it,i)=>{
+  ['Devam Et','MenÃ¼ye DÃ¶n'].forEach((it,i)=>{
     renderCtx.fillStyle=i===pauseSel?'#fff':'#556';
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
   });
 }
 
-const endSacrifice=["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"];
-const endSelfish=["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"];
+const endSacrifice=["IÅŸÄ±ÄŸÄ±nÄ± bÄ±raktÄ±n.","KaranlÄ±k Ã§ekilmeye baÅŸladÄ±...","DÃ¼nya yeniden aydÄ±nlandÄ±.","Ama sen... sÃ¶nÃ¼yorsun.","Son nefesinde gÃ¼lÃ¼msedin.","Ã‡Ã¼nkÃ¼ biliyordun â€”","bir Ä±ÅŸÄ±k sÃ¶nse bile,","bÄ±raktÄ±ÄŸÄ± parÄ±ltÄ± sonsuza dek kalÄ±r.","","SON","â€” FedakÃ¢rlÄ±k Sonu â€”"];
+const endSelfish=["IÅŸÄ±ÄŸÄ±nÄ± kendin iÃ§in sakladÄ±n.","DÃ¼nya karanlÄ±kta kalmaya devam etti.","Ama sen... varsÄ±n. YalnÄ±z.","Sonsuz bir gecede parÄ±ldÄ±yorsun.","Kimse gÃ¶rmÃ¼yor, kimse bilmiyor.","Belki bir gÃ¼n...","baÅŸka bir Ä±ÅŸÄ±k doÄŸar.","Belki o, senin yapamadÄ±ÄŸÄ±nÄ± yapar.","","SON","â€” Bencillik Sonu â€”"];
 
 function updateEnding() { endingTimer++; }
 function drawEnding() {
@@ -1166,7 +1180,7 @@ function drawEnding() {
   if (endingTimer>speed*Math.ceil(texts.length/3)+150) {
     renderCtx.globalAlpha=0.7+Math.sin(frameCount*0.05)*0.3;
     renderCtx.fillStyle='#778'; renderCtx.font='6px "Press Start 2P",monospace';
-    renderCtx.fillText('Menüye dönmek için Enter',WIDTH/2-62,HEIGHT-14);
+    renderCtx.fillText('MenÃ¼ye dÃ¶nmek iÃ§in Enter',WIDTH/2-62,HEIGHT-14);
     renderCtx.globalAlpha=1;
     if (jp['Enter']||jp['Space']) {
       gameState='menu'; endingTimer=0; fragments=0;
