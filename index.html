@@ -159,32 +159,34 @@ function playStep() {
 function playTick() {
   if (!actx) return;
   const sr = actx.sampleRate;
-  // Daktilo/klavye click — kısa, sert gürültü + ufak tık tonu
-  const len = Math.floor(sr * 0.018);
+  const t = actx.currentTime;
+  // Tok gürültü gövdesi — derin, kısa burst
+  const len = Math.floor(sr * 0.025);
   const buf = actx.createBuffer(1, len, sr);
   const d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) {
-    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4) * 0.9;
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * 1.0;
   }
   const src = actx.createBufferSource();
   const flt = actx.createBiquadFilter();
   flt.type = 'bandpass';
-  flt.frequency.value = 2200 + Math.random() * 800;
-  flt.Q.value = 1.2;
+  flt.frequency.value = 800 + Math.random() * 300;
+  flt.Q.value = 2.5;
   const g = actx.createGain();
-  g.gain.value = 0.32;
+  g.gain.value = 0.45;
   src.buffer = buf;
   src.connect(flt); flt.connect(g); g.connect(masterGain);
-  src.start();
-  // Küçük tık tonu (mekanik his)
+  src.start(t);
+  // Derin "tok" rezonans tonu
   const o = actx.createOscillator();
   const og = actx.createGain();
-  o.type = 'square';
-  o.frequency.value = 1800 + Math.random() * 600;
-  og.gain.setValueAtTime(0.025, actx.currentTime);
-  og.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.015);
+  o.type = 'sine';
+  o.frequency.setValueAtTime(180 + Math.random() * 40, t);
+  o.frequency.exponentialRampToValueAtTime(90, t + 0.03);
+  og.gain.setValueAtTime(0.12, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
   o.connect(og); og.connect(masterGain);
-  o.start(); o.stop(actx.currentTime + 0.015);
+  o.start(t); o.stop(t + 0.04);
 }
 
 function playJump() {
