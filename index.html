@@ -45,10 +45,10 @@ canvas {
 const WIDTH = 320;
 const HEIGHT = 180;
 const TILE = 8;
-const GRAVITY = 0.22;
-const MAX_FALL = 4.5;
+const GRAVITY = 0.14;
+const MAX_FALL = 3.2;
 const PLAYER_SPEED = 1.1;
-const JUMP_FORCE = -3.6;
+const JUMP_FORCE = -4.8;
 const COYOTE_TIME = 7;
 const JUMP_BUFFER = 7;
 const PARTICLE_POOL = 300;
@@ -215,7 +215,7 @@ function drawParts(cx,cy) {
 }
 
 // --- OYUNCU ---
-const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32};
+const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:50};
 
 function resetPlayer(x,y) {
   player.x=x;player.y=y;player.vx=0;player.vy=0;
