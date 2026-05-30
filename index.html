@@ -28,10 +28,6 @@ canvas {
 </style>
 </head>
 <body>
-<div id="loading">
-  <div>Son Işık</div>
-  <div class="bar"><div class="fill" id="loadFill"></div></div>
-</div>
 <canvas id="game"></canvas>
 <script>
 // ============================================================
@@ -1145,25 +1141,10 @@ function init() {
   window.addEventListener('resize',resize);
   resize();
 
-  // Yuklenme simulasyonu
-  const fill=document.getElementById('loadFill');
-  let prog=0;
-  const iv=setInterval(()=>{
-    prog+=8;
-    fill.style.width=prog+'%';
-    if (prog>=100) {
-      clearInterval(iv);
-      setTimeout(()=>{
-        document.getElementById('loading').style.opacity='0';
-        setTimeout(()=>{
-          document.getElementById('loading').style.display='none';
-          gameState='menu';
-          lastTime=performance.now();
-          requestAnimationFrame(loop);
-        },1200);
-      },400);
-    }
-  },80);
+  // Yükleme ekranı kaldırıldı, doğrudan ana menüye geçiş
+  gameState = 'menu';
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
 }
 
 // Font hazir olunca basla
