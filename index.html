@@ -544,11 +544,70 @@ function drawTiles(lvl) {
     const tile=lvl.tiles[r][c];
     const sx=Math.floor(c*TILE-cam.x), sy=Math.floor(r*TILE-cam.y);
     if (tile===T.SOLID) {
-      const sh=(c+r)%3===0?'#282838':(c+r)%2===0?'#222230':'#1c1c28';
-      renderCtx.fillStyle=sh;
-      renderCtx.fillRect(sx,sy,TILE,TILE);
-      if (r>0&&lvl.tiles[r-1][c]===T.AIR) { renderCtx.fillStyle='#383848'; renderCtx.fillRect(sx,sy,TILE,1); }
-      if (r<lvl.h-1&&lvl.tiles[r+1][c]===T.AIR) { renderCtx.fillStyle='#181820'; renderCtx.fillRect(sx,sy+TILE-1,TILE,1); }
+      const isBottom = r < lvl.h - 1 && lvl.tiles[r+1][c] === T.AIR;
+      const isTop = r > 0 && lvl.tiles[r-1][c] === T.AIR;
+      const isLeft = c > 0 && lvl.tiles[r][c-1] === T.AIR;
+      const isRight = c < lvl.w - 1 && lvl.tiles[r][c+1] === T.AIR;
+
+      // Ana gövde rengi (Koyu Atmosferik Kaya)
+      renderCtx.fillStyle = '#171524';
+      renderCtx.fillRect(sx, sy, TILE, TILE);
+
+      // Dalgalı toprak deseni
+      renderCtx.fillStyle = '#100e1a';
+      for (let x = 0; x < TILE; x++) {
+        const waveY = 4 + Math.sin((c * TILE + x) * 0.6) * 1.5;
+        renderCtx.fillRect(sx + x, sy + Math.floor(waveY), 1, TILE - Math.floor(waveY));
+      }
+
+      // Dikey blok birleşim çizgisi (İki blokta bir derz detayı)
+      if (c % 2 === 0) {
+        renderCtx.fillStyle = '#0a0910';
+        renderCtx.fillRect(sx + 3, sy, 1, TILE);
+      }
+
+      // Alt dalgalı sınır (Altta hava varsa alt kısmı oyuklu yap)
+      if (isBottom) {
+        renderCtx.fillStyle = '#05040a';
+        for (let x = 0; x < TILE; x++) {
+          const cut = (x === 0 || x === 7) ? 1 : (x === 3 || x === 4) ? 2 : 1;
+          renderCtx.fillRect(sx + x, sy + TILE - cut, 1, cut);
+        }
+      }
+
+      // Yan gölgeler
+      if (isLeft) {
+        renderCtx.fillStyle = '#0d0b17';
+        renderCtx.fillRect(sx, sy, 1, TILE);
+      }
+      if (isRight) {
+        renderCtx.fillStyle = '#0d0b17';
+        renderCtx.fillRect(sx + TILE - 1, sy, 1, TILE);
+      }
+
+      // Işıltılı Organik Yosun (Üst Kısım - Sarkıt Çimenler)
+      if (isTop) {
+        const mossColor = '#00a877';
+        const mossHighlight = '#4df2c1';
+        const drips = [2, 3, 2, 1, 2, 4, 3, 2];
+        
+        // Koyu yosun sarkıtları
+        renderCtx.fillStyle = mossColor;
+        for (let x = 0; x < TILE; x++) {
+          const dripIdx = (c * TILE + x) % drips.length;
+          const h = drips[dripIdx];
+          renderCtx.fillRect(sx + x, sy, 1, h);
+        }
+
+        // Parlak yosun üst çizgisi
+        renderCtx.fillStyle = mossHighlight;
+        renderCtx.fillRect(sx, sy, TILE, 1);
+        for (let x = 0; x < TILE; x += 2) {
+          if ((c + x) % 3 === 0) {
+            renderCtx.fillRect(sx + x, sy + 1, 1, 1);
+          }
+        }
+      }
     } else if (tile===T.PLATFORM) {
       renderCtx.fillStyle='#333346'; renderCtx.fillRect(sx,sy,TILE,2);
       renderCtx.fillStyle='#444460'; renderCtx.fillRect(sx,sy,TILE,1);
