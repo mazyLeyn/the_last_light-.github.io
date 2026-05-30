@@ -219,34 +219,6 @@ function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 
 function startAmbient(lvl) {
   if (!actx) return;
   stopAmbient();
-  const sr = actx.sampleRate;
-
-  // --- Rüzgar esintisi ---
-  // 4 saniyelik döngüsel beyaz gürültü tamponu
-  const bs = sr * 4;
-  const nb = actx.createBuffer(1, bs, sr);
-  const nd = nb.getChannelData(0);
-  for (let i = 0; i < bs; i++) nd[i] = Math.random() * 2 - 1;
-  windSrc = actx.createBufferSource();
-  windSrc.buffer = nb;
-  windSrc.loop = true;
-  // İki kademeli filtre: önce highpass (düşük gürültüyü kes), sonra bandpass (rüzgar frekansı)
-  const hp = actx.createBiquadFilter();
-  hp.type = 'highpass'; hp.frequency.value = 180; hp.Q.value = 0.5;
-  const bp = actx.createBiquadFilter();
-  bp.type = 'bandpass'; bp.frequency.value = 600 + lvl * 80; bp.Q.value = 0.4;
-  // LFO — rüzgar dalgalanması
-  ambOsc = actx.createOscillator();
-  ambOsc.type = 'sine';
-  ambOsc.frequency.value = 0.08 + lvl * 0.015;
-  const lfoGain = actx.createGain();
-  lfoGain.gain.value = 0.008;
-  ambGain2 = actx.createGain();
-  ambGain2.gain.value = 0.055;
-  ambOsc.connect(lfoGain); lfoGain.connect(ambGain2.gain);
-  windSrc.connect(hp); hp.connect(bp); bp.connect(ambGain2); ambGain2.connect(masterGain);
-  windSrc.start();
-  ambOsc.start();
 
   // --- Hafif pentatonik melodi ---
   // Her bölüme özgü nota dizisi (pentatonik minör)
