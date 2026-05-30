@@ -190,7 +190,7 @@ function playTick() {
 function playJump() {
   if (!actx) return;
   const t = actx.currentTime;
-  // Yumuşak hava basıncı — sweep up
+  // Boink — sine sweep up
   const o1 = actx.createOscillator();
   const g1 = actx.createGain();
   o1.type = 'sine';
@@ -210,18 +210,6 @@ function playJump() {
   g2.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
   o2.connect(g2); g2.connect(masterGain);
   o2.start(t + 0.02); o2.stop(t + 0.16);
-  // Kısa noise whoosh
-  const sr = actx.sampleRate;
-  const len = Math.floor(sr * 0.08);
-  const nb = actx.createBuffer(1, len, sr);
-  const nd = nb.getChannelData(0);
-  for (let i = 0; i < len; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.8) * 0.12;
-  const ns = actx.createBufferSource();
-  const nf = actx.createBiquadFilter();
-  nf.type = 'highpass'; nf.frequency.value = 600;
-  const ng = actx.createGain(); ng.gain.value = 0.4;
-  ns.buffer = nb; ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
-  ns.start(t + 0.01);
 }
 
 function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 'sine', 0.04, 0.1); }
