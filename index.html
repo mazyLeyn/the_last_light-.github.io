@@ -17,14 +17,6 @@ canvas {
   image-rendering: crisp-edges;
   -ms-interpolation-mode: nearest-neighbor;
 }
-#loading {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #000; color: #aad; font-family: 'Press Start 2P', monospace;
-  font-size: 11px; z-index: 999; transition: opacity 1.2s;
-}
-#loading .bar { width: 200px; height: 6px; border: 1px solid #557; margin-top: 20px; border-radius: 3px; }
-#loading .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #5588cc, #aaddff); transition: width 0.3s; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -605,14 +597,8 @@ function drawTiles(lvl) {
           renderCtx.fillRect(sx + x, sy + TILE - cut, 1, cut);
         }
       }
-      if (isLeft) {
-        renderCtx.fillStyle = '#0d0b17';
-        renderCtx.fillRect(sx, sy, 1, TILE);
-      }
-      if (isRight) {
-        renderCtx.fillStyle = '#0d0b17';
-        renderCtx.fillRect(sx + TILE - 1, sy, 1, TILE);
-      }
+      if (isLeft) { renderCtx.fillStyle = '#0d0b17'; renderCtx.fillRect(sx, sy, 1, TILE); }
+      if (isRight) { renderCtx.fillStyle = '#0d0b17'; renderCtx.fillRect(sx + TILE - 1, sy, 1, TILE); }
       if (isTop) {
         const mossColor = '#00a877';
         const mossHighlight = '#4df2c1';
@@ -626,9 +612,7 @@ function drawTiles(lvl) {
         renderCtx.fillStyle = mossHighlight;
         renderCtx.fillRect(sx, sy, TILE, 1);
         for (let x = 0; x < TILE; x += 2) {
-          if ((c + x) % 3 === 0) {
-            renderCtx.fillRect(sx + x, sy + 1, 1, 1);
-          }
+          if ((c + x) % 3 === 0) renderCtx.fillRect(sx + x, sy + 1, 1, 1);
         }
       }
     } else if (tile===T.PLATFORM) {
@@ -792,7 +776,6 @@ function drawLighting() {
 
 function drawDeco(lvl) {
   if (currentLevel===0) {
-    renderCtx.fillStyle='#0a1510';
     for (let i=0;i<18;i++) {
       const tx=i*55-(cam.x*0.65)%55;
       const th=25+Math.sin(i*2.1)*10;
@@ -982,6 +965,60 @@ function updateFade() {
 }
 function drawFade() { if(fadeAlpha>0){renderCtx.save();renderCtx.globalAlpha=fadeAlpha;renderCtx.fillStyle='#000';renderCtx.fillRect(0,0,WIDTH,HEIGHT);renderCtx.restore();} }
 
+// --- FLICKER DURUMU (global, drawMenu dışında tutulur) ---
+const flicker = {
+  phase: 0,       // 0=normal, 1=kesinti
+  timer: 0,
+  nextAt: 90 + Math.floor(Math.random() * 130),
+  alpha: 1,
+  offsetX: 0,
+  type: 'rapid',  // 'rapid' | 'blackout' | 'glitch'
+  dur: 3,
+  glitchLine: 0
+};
+
+function updateFlicker() {
+  flicker.timer++;
+  if (flicker.phase === 0) {
+    // Normal: alpha'yı 1'e çek, offsetX'i sıfırla
+    flicker.alpha += (1 - flicker.alpha) * 0.18;
+    flicker.offsetX *= 0.75;
+    if (flicker.timer >= flicker.nextAt) {
+      flicker.phase = 1;
+      flicker.timer = 0;
+      // Kesinti türünü seç
+      const r = Math.random();
+      flicker.type = r < 0.35 ? 'blackout' : r < 0.65 ? 'rapid' : 'glitch';
+      flicker.dur = flicker.type === 'blackout' ? 4 + Math.floor(Math.random() * 9)
+                  : flicker.type === 'glitch'   ? 5 + Math.floor(Math.random() * 7)
+                  :                               2 + Math.floor(Math.random() * 4);
+      flicker.glitchLine = Math.floor(Math.random() * 3);
+    }
+  } else {
+    // Kesinti aktif
+    if (flicker.type === 'blackout') {
+      flicker.alpha = flicker.timer % 2 === 0 ? 0.0 : 0.12;
+    } else if (flicker.type === 'rapid') {
+      flicker.alpha = flicker.timer % 2 === 0 ? 0.85 : 0.08;
+    } else { // glitch
+      flicker.alpha = 0.65 + Math.sin(flicker.timer * 2.1) * 0.35;
+      flicker.offsetX = (Math.random() - 0.5) * 7;
+    }
+    if (flicker.timer >= flicker.dur) {
+      // %40 ihtimalle ard arda ikinci kısa titreme (sadece rapid/blackout)
+      if (Math.random() < 0.4 && flicker.type !== 'glitch') {
+        flicker.timer = 0;
+        flicker.dur = 1 + Math.floor(Math.random() * 3);
+      } else {
+        flicker.phase = 0;
+        flicker.timer = 0;
+        flicker.nextAt = 55 + Math.floor(Math.random() * 200);
+        flicker.offsetX = 0;
+      }
+    }
+  }
+}
+
 function updateMenu() {
   if (showCtrl) { if(jp['Escape']||jp['Enter']||jp['Space']) showCtrl=false; return; }
   if (showSettings) { updateSettings(); return; }
@@ -1009,25 +1046,66 @@ function drawMenu() {
   drawParts(0,0);
   renderCtx.save();
 
-  // --- BAŞLIK: THE / LAST / LIGHT — alt alta, 20 derece sola yatık ---
-  renderCtx.save();
-  renderCtx.translate(WIDTH/2, 42);
-  renderCtx.rotate(-20 * Math.PI / 180);
+  // --- BAŞLIK: THE / LAST / LIGHT — elektrik kesintisi efekti ---
+  updateFlicker();
+  const fk = flicker;
   const titleLines = ['THE', 'LAST', 'LIGHT'];
   const lineH = 20;
+
+  renderCtx.save();
+  renderCtx.translate(WIDTH/2 + fk.offsetX, 42);
+  renderCtx.rotate(-20 * Math.PI / 180);
+
   titleLines.forEach(function(line, i) {
-    // LAST ortada, daha parlak
-    if (i === 1) {
-      renderCtx.font = '15px "Press Start 2P",monospace';
-      renderCtx.fillStyle = '#cceeff';
-    } else {
-      renderCtx.font = '12px "Press Start 2P",monospace';
-      renderCtx.fillStyle = '#7799bb';
+    const isMiddle = i === 1;
+    renderCtx.font = (isMiddle ? '15px' : '12px') + ' "Press Start 2P",monospace';
+
+    // Glitch satırına özel kayma
+    let la = fk.alpha;
+    let lox = 0;
+    if (fk.phase === 1 && fk.type === 'glitch' && i === fk.glitchLine) {
+      la = Math.random() < 0.5 ? 1.0 : 0.15;
+      lox = (Math.random() - 0.5) * 9;
     }
+
     const lw = renderCtx.measureText(line).width;
-    renderCtx.fillText(line, -lw / 2, i * lineH);
+    const bx = -lw / 2 + lox;
+    const by = i * lineH;
+
+    // Elektrik mavi halo (normal fazda hafif, kesintide parlayan)
+    if (la > 0.3) {
+      renderCtx.globalAlpha = la * (fk.phase === 1 ? 0.35 : 0.12);
+      renderCtx.fillStyle = '#33aaff';
+      renderCtx.fillText(line, bx + 1, by + 1);
+      renderCtx.fillText(line, bx - 1, by - 1);
+    }
+
+    // Glitch renk ayrışması (kırmızı + cyan katmanları)
+    if (fk.phase === 1 && fk.type === 'glitch' && i === fk.glitchLine) {
+      renderCtx.globalAlpha = la * 0.6;
+      renderCtx.fillStyle = '#ff4422';
+      renderCtx.fillText(line, bx - 2, by);
+      renderCtx.globalAlpha = la * 0.5;
+      renderCtx.fillStyle = '#22ffee';
+      renderCtx.fillText(line, bx + 2, by);
+    }
+
+    // Ana metin
+    renderCtx.globalAlpha = la;
+    renderCtx.fillStyle = isMiddle ? '#cceeff' : '#7799bb';
+    renderCtx.fillText(line, bx, by);
+
+    // "LAST" satırı üzerinde ince parlama çizgisi (tam parlak anında)
+    if (isMiddle && la > 0.85 && fk.phase === 0) {
+      renderCtx.globalAlpha = (la - 0.85) * 1.2;
+      renderCtx.fillStyle = '#aaddff';
+      renderCtx.fillRect(bx, by - 13, lw, 1);
+    }
   });
+
+  renderCtx.globalAlpha = 1;
   renderCtx.restore();
+  // --- BAŞLIK SONU ---
 
   // Alt yazı ve menü seçenekleri
   renderCtx.fillStyle='#334'; renderCtx.font='6px "Press Start 2P",monospace';
@@ -1110,7 +1188,6 @@ function drawPause() {
   renderCtx.fillStyle='rgba(0,0,0,0.82)'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
   renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('DURAKLAT',WIDTH/2-34,55);
-  renderCtx.font='7px "Press Start 2P",monospace';
   ['Devam Et','Menüye Dön'].forEach((it,i)=>{
     renderCtx.fillStyle=i===pauseSel?'#fff':'#556';
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
@@ -1212,7 +1289,6 @@ function loop(time) {
 
   drawFade();
   clearJP();
-
   ctx.drawImage(renderCanvas,0,0);
 }
 
@@ -1231,22 +1307,17 @@ function init() {
   canvas.width=WIDTH; canvas.height=HEIGHT;
   ctx=canvas.getContext('2d');
   ctx.imageSmoothingEnabled=false;
-
   renderCanvas=document.createElement('canvas');
   renderCanvas.width=WIDTH; renderCanvas.height=HEIGHT;
   renderCtx=renderCanvas.getContext('2d');
   renderCtx.imageSmoothingEnabled=false;
-
   lightCanvas=document.createElement('canvas');
   lightCanvas.width=WIDTH; lightCanvas.height=HEIGHT;
   lightCtx=lightCanvas.getContext('2d');
-
   window.addEventListener('resize',resize);
   resize();
-
   clearJP();
   for (let k in keys) delete keys[k];
-
   gameState = 'menu';
   lastTime = performance.now();
   requestAnimationFrame(loop);
@@ -1254,11 +1325,7 @@ function init() {
 
 function startWhenReady() {
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function() {
-      setTimeout(init, 100);
-    }).catch(function() {
-      setTimeout(init, 100);
-    });
+    document.fonts.ready.then(function() { setTimeout(init, 100); }).catch(function() { setTimeout(init, 100); });
   } else {
     setTimeout(init, 500);
   }
@@ -1269,7 +1336,6 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 } else {
   document.addEventListener('DOMContentLoaded', startWhenReady);
 }
-
 setTimeout(function() { if (!window.gameInitialized) init(); }, 3000);
 
 })();
