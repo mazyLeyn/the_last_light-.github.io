@@ -45,12 +45,9 @@ const WIDTH = 320;
 const HEIGHT = 180;
 const TILE = 8;
 const GRAVITY = 0.22;
-const GRAVITY = 0.15;
 const MAX_FALL = 4.5;
 const PLAYER_SPEED = 1.1;
 const JUMP_FORCE = -3.6;
-const PLAYER_SPEED = 1.2;
-const JUMP_FORCE = -3.8;
 const COYOTE_TIME = 7;
 const JUMP_BUFFER = 7;
 const PARTICLE_POOL = 300;
@@ -63,7 +60,7 @@ let currentLevel = 0;
 let fragments = 0;
 let totalFragments = 8;
 let checkpointX = 0, checkpointY = 0;
-let fadeAlpha = 0, fadeDir = 0, fadeCallback = null;
+let fadeAlpha = 1, fadeDir = 0, fadeCallback = null;
 let endingType = '';
 let lastTime = 0, frameCount = 0;
 let paused = false, pauseSel = 0;
@@ -196,7 +193,6 @@ function drawParts(cx,cy) {
 }
 // --- OYUNCU ---
 const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32};
-const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:75};
 function resetPlayer(x,y) {
   player.x=x;player.y=y;player.vx=0;player.vy=0;
   player.grounded=false;player.coyote=0;player.jbuf=0;
@@ -1056,10 +1052,7 @@ function resize() {
   canvas.style.height=Math.floor(h)+'px';
 }
 // --- BASLATMA ---
-let isInitialized = false;
 function init() {
-  if (isInitialized) return;
-  isInitialized = true;
   canvas=document.getElementById('game');
   canvas.width=WIDTH; canvas.height=HEIGHT;
   ctx=canvas.getContext('2d');
