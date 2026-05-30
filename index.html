@@ -219,31 +219,90 @@ function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 
 function startAmbient(lvl) {
   if (!actx) return;
   stopAmbient();
+  const sr = actx.sampleRate;
+
+  // --- Rüzgar esintisi ---
+  // 4 saniyelik döngüsel beyaz gürültü tamponu
+  const bs = sr * 4;
+  const nb = actx.createBuffer(1, bs, sr);
+  const nd = nb.getChannelData(0);
+  for (let i = 0; i < bs; i++) nd[i] = Math.random() * 2 - 1;
+  windSrc = actx.createBufferSource();
+  windSrc.buffer = nb;
+  windSrc.loop = true;
+  // İki kademeli filtre: önce highpass (düşük gürültüyü kes), sonra bandpass (rüzgar frekansı)
+  const hp = actx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 180; hp.Q.value = 0.5;
+  const bp = actx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 600 + lvl * 80; bp.Q.value = 0.4;
+  // LFO — rüzgar dalgalanması
   ambOsc = actx.createOscillator();
-  ambGain2 = actx.createGain();
   ambOsc.type = 'sine';
-  ambOsc.frequency.value = 50 + lvl * 8;
-  ambGain2.gain.value = 0.035;
-  ambOsc.connect(ambGain2); ambGain2.connect(masterGain);
+  ambOsc.frequency.value = 0.08 + lvl * 0.015;
+  const lfoGain = actx.createGain();
+  lfoGain.gain.value = 0.008;
+  ambGain2 = actx.createGain();
+  ambGain2.gain.value = 0.055;
+  ambOsc.connect(lfoGain); lfoGain.connect(ambGain2.gain);
+  windSrc.connect(hp); hp.connect(bp); bp.connect(ambGain2); ambGain2.connect(masterGain);
+  windSrc.start();
   ambOsc.start();
 
-  const bs = actx.sampleRate * 2;
-  const nb = actx.createBuffer(1, bs, actx.sampleRate);
-  const nd = nb.getChannelData(0);
-  for (let i = 0; i < bs; i++) nd[i] = Math.random()*2-1;
-  windSrc = actx.createBufferSource();
-  windSrc.buffer = nb; windSrc.loop = true;
-  const flt = actx.createBiquadFilter();
-  flt.type = 'lowpass'; flt.frequency.value = 300 + lvl * 60;
-  windGain2 = actx.createGain(); windGain2.gain.value = 0.02;
-  windSrc.connect(flt); flt.connect(windGain2); windGain2.connect(masterGain);
-  windSrc.start();
+  // --- Hafif pentatonik melodi ---
+  // Her bölüme özgü nota dizisi (pentatonik minör)
+  const scales = [
+    [220, 261, 294, 330, 392],   // Orman — La pentatonik
+    [196, 220, 261, 294, 349],   // Köy — Sol pentatonik
+    [174, 196, 220, 261, 294],   // Maden — Fa pentatonik
+    [164, 196, 220, 246, 294],   // Uçurum — Mi pentatonik
+    [220, 246, 294, 330, 370],   // Kaynak — La maj pentatonik
+  ];
+  const scale = scales[Math.min(lvl, scales.length - 1)];
+  // windGain2'yi melodi zamanlayıcısı olarak kullanıyoruz
+  windGain2 = actx.createGain();
+  windGain2.gain.value = 0; // sadece referans tutucu
+  windGain2.connect(masterGain);
+  let melodyActive = true;
+  // Zamanlayıcıyı ambGain2'nin .disconnect'i tetikleyene kadar çalıştır
+  function schedMelody(startTime) {
+    if (!melodyActive) return;
+    const gap = 2.2 + Math.random() * 3.5;
+    const note = scale[Math.floor(Math.random() * scale.length)];
+    const harmNote = scale[Math.floor(Math.random() * scale.length)];
+    const t = startTime;
+    // Ana nota
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.value = note;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.028, t + 0.18);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    o.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 1.4);
+    // Hafif harmonik (5. aralık)
+    const o2 = actx.createOscillator();
+    const g2 = actx.createGain();
+    o2.type = 'triangle';
+    o2.frequency.value = harmNote * 1.5;
+    g2.gain.setValueAtTime(0, t + 0.05);
+    g2.gain.linearRampToValueAtTime(0.010, t + 0.25);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    o2.connect(g2); g2.connect(masterGain);
+    o2.start(t + 0.05); o2.stop(t + 1.2);
+    // Bir sonraki notayı planla
+    const tid = setTimeout(() => { if (melodyActive) schedMelody(actx.currentTime); }, gap * 1000);
+    windGain2._tid = tid;
+  }
+  schedMelody(actx.currentTime + 0.5);
+  windGain2._stop = () => { melodyActive = false; if (windGain2._tid) clearTimeout(windGain2._tid); };
 }
 
 function stopAmbient() {
   try { if (ambOsc) ambOsc.stop(); } catch(e){}
   try { if (windSrc) windSrc.stop(); } catch(e){}
-  ambOsc = null; windSrc = null;
+  try { if (windGain2 && windGain2._stop) windGain2._stop(); } catch(e){}
+  ambOsc = null; windSrc = null; windGain2 = null;
 }
 
 function playEnding(type) {
