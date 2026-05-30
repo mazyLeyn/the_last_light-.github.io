@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Last Lıght</title>
-<link rel="icon" type="image/png" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -956,16 +955,9 @@ function drawMenu() {
   if (frameCount%4===0) emit(Math.random()*WIDTH,HEIGHT+2,(Math.random()-0.5)*0.2,-Math.random()*0.6-0.3,55,1,'#3344aa','dust');
   drawParts(0,0);
   renderCtx.save();
-  // Logo veya yazı başlık
-  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    const lw=64, lh=Math.round(64*(logoImg.naturalHeight/logoImg.naturalWidth));
-    renderCtx.imageSmoothingEnabled=false;
-    renderCtx.drawImage(logoImg, WIDTH/2-lw/2, 18, lw, lh);
-  } else {
-    renderCtx.fillStyle='#99bbdd'; renderCtx.font='12px "Press Start 2P",monospace';
-    const titleW=renderCtx.measureText('Son Işık').width;
-    renderCtx.fillText('Son Işık',WIDTH/2-titleW/2,52);
-  }
+  renderCtx.fillStyle='#99bbdd'; renderCtx.font='12px "Press Start 2P",monospace';
+  const titleW=renderCtx.measureText('Son Işık').width;
+  renderCtx.fillText('Son Işık',WIDTH/2-titleW/2,52);
   renderCtx.fillStyle='#445'; renderCtx.font='6px "Press Start 2P",monospace';
   const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
   renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,66);
@@ -1173,7 +1165,6 @@ function resize() {
 }
 
 // --- BASLATMA ---
-let logoImg = null;
 function init() {
   if (window.gameInitialized) return;
   window.gameInitialized = true;
@@ -1190,10 +1181,6 @@ function init() {
   lightCanvas=document.createElement('canvas');
   lightCanvas.width=WIDTH; lightCanvas.height=HEIGHT;
   lightCtx=lightCanvas.getContext('2d');
-
-  // Logo yükle
-  logoImg = new Image();
-  logoImg.src = 'logo.png';
 
   window.addEventListener('resize',resize);
   resize();
