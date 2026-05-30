@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Last Light</title>
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+<title>The Last Lıght</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -20,7 +20,7 @@ canvas {
 #loading {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #000; color: #aad; font-family: 'Silkscreen', monospace;
+  background: #000; color: #aad; font-family: 'Press Start 2P', monospace;
   font-size: 11px; z-index: 999; transition: opacity 1.2s;
 }
 #loading .bar { width: 200px; height: 6px; border: 1px solid #557; margin-top: 20px; border-radius: 3px; }
@@ -577,7 +577,7 @@ function drawDlg() {
   renderCtx.strokeStyle='#445'; renderCtx.lineWidth=1;
   renderCtx.strokeRect(8,HEIGHT-52,WIDTH-16,46);
   renderCtx.fillStyle='#ccd';
-  renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.font='7px "Press Start 2P",monospace';
   const txt=dlgLines[dlgLine].substring(0,dlgChar);
   wrapTxt(renderCtx,txt,14,HEIGHT-40,WIDTH-28,9);
   if (dlgChar>=dlgLines[dlgLine].length) {
@@ -788,7 +788,7 @@ function drawNPCs(lvl) {
     // E gostergesi
     const dist=Math.abs(player.x-npc.x)+Math.abs(player.y-npc.y);
     if (dist<35&&!npc.done) {
-      renderCtx.fillStyle='#aab'; renderCtx.font='6px "Silkscreen",monospace';
+      renderCtx.fillStyle='#aab'; renderCtx.font='6px "Press Start 2P",monospace';
       renderCtx.fillText('E',Math.floor(sx+2),Math.floor(sy-6));
     }
   }
@@ -935,7 +935,7 @@ function drawDeco(lvl) {
 // --- HUD ---
 function drawHUD() {
   renderCtx.save();
-  renderCtx.fillStyle='#99aabb'; renderCtx.font='6px "Silkscreen",monospace';
+  renderCtx.fillStyle='#99aabb'; renderCtx.font='6px "Press Start 2P",monospace';
   renderCtx.fillText(`Fragman: ${fragments}/${totalFragments}`,4,10);
   const names=['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'];
   renderCtx.fillStyle='#556'; renderCtx.fillText(names[currentLevel],4,19);
@@ -947,7 +947,7 @@ function drawChoices() {
   const lvl=levels[currentLevel];
   const src=lvl.npcs.find(n=>n.type==='source');
   if (!src||!src.done) return;
-  renderCtx.save(); renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.save(); renderCtx.font='7px "Press Start 2P",monospace';
   const lx=83*TILE-cam.x, ly=16*TILE-cam.y;
   renderCtx.fillStyle=`rgba(80,160,255,${0.6+Math.sin(frameCount*0.04)*0.3})`;
   renderCtx.fillText('Fedakârlık',Math.floor(lx-6),Math.floor(ly));
@@ -1127,14 +1127,14 @@ function drawMenu() {
   if (frameCount%4===0) emit(Math.random()*WIDTH,HEIGHT+2,(Math.random()-0.5)*0.2,-Math.random()*0.6-0.3,55,1,'#3344aa','dust');
   drawParts(0,0);
   renderCtx.save();
-  renderCtx.fillStyle='#99bbdd'; renderCtx.font='12px "Silkscreen",monospace';
+  renderCtx.fillStyle='#99bbdd'; renderCtx.font='12px "Press Start 2P",monospace';
   const titleW=renderCtx.measureText('Son Işık').width;
   renderCtx.fillText('Son Işık',WIDTH/2-titleW/2,52);
-  renderCtx.fillStyle='#445'; renderCtx.font='6px "Silkscreen",monospace';
+  renderCtx.fillStyle='#445'; renderCtx.font='6px "Press Start 2P",monospace';
   const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
   renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,66);
   const items=['Oyna','Kontroller','Ayarlar'];
-  renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.font='7px "Press Start 2P",monospace';
   items.forEach((it,i)=>{
     renderCtx.fillStyle=i===menuSel?'#dde':'#556';
     const tw=renderCtx.measureText('> '+it).width;
@@ -1148,11 +1148,11 @@ function drawMenu() {
 function drawSettingsScreen() {
   renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
-  renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
   const titleW=renderCtx.measureText('AYARLAR').width;
   renderCtx.fillText('AYARLAR',WIDTH/2-titleW/2,36);
   // Ses satırı
-  renderCtx.font='6px "Silkscreen",monospace';
+  renderCtx.font='6px "Press Start 2P",monospace';
   renderCtx.fillStyle='#dde';
   renderCtx.fillText('Ana Ses',34,62);
   // Toggle kutusu
@@ -1165,10 +1165,10 @@ function drawSettingsScreen() {
   renderCtx.fillStyle=soundEnabled?'#aaddff':'#556';
   renderCtx.fillRect(kx,by+2,8,8);
   renderCtx.fillStyle=soundEnabled?'#aaddff':'#778';
-  renderCtx.font='5px "Silkscreen",monospace';
+  renderCtx.font='5px "Press Start 2P",monospace';
   renderCtx.fillText(soundEnabled?'AÇIK':'KAPALI',bx+2,by+10);
   // Alt bilgi
-  renderCtx.fillStyle='#445'; renderCtx.font='5px "Silkscreen",monospace';
+  renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
   renderCtx.fillText('Enter/Space: değiştir',34,90);
   renderCtx.fillText('ESC: geri',34,103);
 }
@@ -1176,9 +1176,9 @@ function drawSettingsScreen() {
 function drawCtrlScreen() {
   renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
-  renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('KONTROLLER',70,36);
-  renderCtx.font='6px "Silkscreen",monospace'; renderCtx.fillStyle='#778';
+  renderCtx.font='6px "Press Start 2P",monospace'; renderCtx.fillStyle='#778';
   const c=['Hareket: Ok Tuşları / WASD','Zıpla: Space (basılı tut = yüksek)','Etkileşim: E','Duraklat: ESC','','Geri: ESC / Enter'];
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
@@ -1197,7 +1197,7 @@ function drawIntro() {
   if (introStep<introTxts.length&&introTxts[introStep]) {
     const a=Math.min(1,introTimer/35);
     renderCtx.save(); renderCtx.globalAlpha=a;
-    renderCtx.fillStyle='#8899bb'; renderCtx.font='7px "Silkscreen",monospace';
+    renderCtx.fillStyle='#8899bb'; renderCtx.font='7px "Press Start 2P",monospace';
     const txt=introTxts[introStep];
     const tw=renderCtx.measureText(txt).width;
     renderCtx.fillText(txt,(WIDTH-tw)/2,HEIGHT/2);
@@ -1214,9 +1214,9 @@ function updatePause() {
 }
 function drawPause() {
   renderCtx.fillStyle='rgba(0,0,0,0.82)'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
-  renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Press Start 2P",monospace';
   renderCtx.fillText('DURAKLAT',WIDTH/2-34,55);
-  renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.font='7px "Press Start 2P",monospace';
   ['Devam Et','Menüye Dön'].forEach((it,i)=>{
     renderCtx.fillStyle=i===pauseSel?'#fff':'#556';
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
@@ -1235,7 +1235,7 @@ function drawEnding() {
   const speed=160;
   const grp=Math.floor(endingTimer/speed);
   const alpha=Math.min(1,(endingTimer%speed)/30);
-  renderCtx.save(); renderCtx.font='7px "Silkscreen",monospace';
+  renderCtx.save(); renderCtx.font='7px "Press Start 2P",monospace';
   for (let i=0;i<3;i++) {
     const li=grp*3+i; if(li>=texts.length) break;
     renderCtx.fillStyle=endingType==='sacrifice'?'#99ccee':'#ddaa77';
@@ -1254,7 +1254,7 @@ function drawEnding() {
   // Menu'ye don
   if (endingTimer>speed*Math.ceil(texts.length/3)+150) {
     renderCtx.globalAlpha=0.7+Math.sin(frameCount*0.05)*0.3;
-    renderCtx.fillStyle='#778'; renderCtx.font='6px "Silkscreen",monospace';
+    renderCtx.fillStyle='#778'; renderCtx.font='6px "Press Start 2P",monospace';
     renderCtx.fillText('Menüye dönmek için Enter',WIDTH/2-62,HEIGHT-14);
     renderCtx.globalAlpha=1;
     if (jp['Enter']||jp['Space']) {
