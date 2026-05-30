@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Son Işık</title>
+<title>The Last Lıght</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,10 +45,10 @@ canvas {
 const WIDTH = 320;
 const HEIGHT = 180;
 const TILE = 8;
-const GRAVITY = 0.14;
-const MAX_FALL = 3.2;
+const GRAVITY = 0.16;
+const MAX_FALL = 4.5;
 const PLAYER_SPEED = 1.1;
-const JUMP_FORCE = -4.8;
+const JUMP_FORCE = -3.2;
 const COYOTE_TIME = 7;
 const JUMP_BUFFER = 7;
 const PARTICLE_POOL = 300;
@@ -215,7 +215,7 @@ function drawParts(cx,cy) {
 }
 
 // --- OYUNCU ---
-const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:50};
+const player = {x:40,y:100,vx:0,vy:0,w:5,h:7,grounded:false,coyote:0,jbuf:0,face:1,stepT:0,glow:32};
 
 function resetPlayer(x,y) {
   player.x=x;player.y=y;player.vx=0;player.vy=0;
@@ -263,7 +263,7 @@ levels.push(mkLevel(130,23,(lvl,t)=>{
   // Sol duvar
   fillR(t,0,8,2,19,T.SOLID);
   // Platformlar
-  plat(t,10,17,5); plat(t,20,15,4); plat(t,30,16,5);
+  plat(t,10,17,5); plat(t,19,15,5); plat(t,30,16,5);
   plat(t,36,14,4); plat(t,44,16,5); plat(t,52,14,4);
   plat(t,58,17,5); plat(t,65,15,4); plat(t,73,14,3);
   plat(t,78,16,5); plat(t,85,14,4); plat(t,92,16,5);
@@ -845,7 +845,7 @@ function updatePlay() {
   if (isJump()) player.jbuf=JUMP_BUFFER; else if(player.jbuf>0) player.jbuf--;
   if (player.jbuf>0&&player.coyote>0) { player.vy=JUMP_FORCE; player.jbuf=0; player.coyote=0; player.grounded=false; playJump(); }
   // Degisken ziplama
-  if (!keys['Space']&&!keys['ArrowUp']&&!keys['KeyW']&&player.vy<-1) player.vy*=0.55;
+  if (!keys['Space']&&!keys['ArrowUp']&&!keys['KeyW']&&player.vy<-1) player.vy*=0.4;
   // Yercekimi
   player.vy+=GRAVITY; if(player.vy>MAX_FALL) player.vy=MAX_FALL;
   // Hareket + carpisma
