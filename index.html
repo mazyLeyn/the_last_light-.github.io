@@ -59,7 +59,7 @@ let currentLevel = 0;
 let fragments = 0;
 let totalFragments = 8;
 let checkpointX = 0, checkpointY = 0;
-let fadeAlpha = 1, fadeDir = 0, fadeCallback = null;
+let fadeAlpha = 0, fadeDir = 0, fadeCallback = null;
 let endingType = '';
 let lastTime = 0, frameCount = 0;
 let paused = false, pauseSel = 0;
@@ -1063,6 +1063,7 @@ function loop(time) {
   updateParts();
 
   switch(gameState) {
+    case 'loading':
     case 'menu': updateMenu(); drawMenu(); break;
     case 'intro': updateIntro(); drawIntro(); break;
     case 'play':
@@ -1141,6 +1142,10 @@ function init() {
   window.addEventListener('resize',resize);
   resize();
 
+  // Başlangıçta tuş durumunu temizle
+  clearJP();
+  for (let k in keys) delete keys[k];
+
   // Yükleme ekranı kaldırıldı, doğrudan ana menüye geçiş
   gameState = 'menu';
   lastTime = performance.now();
@@ -1148,13 +1153,27 @@ function init() {
 }
 
 // Font hazir olunca basla
-if (document.fonts&&document.fonts.ready) {
-  document.fonts.ready.then(init).catch(init);
-} else {
-  setTimeout(init,1500);
+function startWhenReady() {
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function() {
+      // Fontin gerçekten yüklendiğinden emin olmak için kısa bekleme
+      setTimeout(init, 100);
+    }).catch(function() {
+      setTimeout(init, 100);
+    });
+  } else {
+    setTimeout(init, 500);
+  }
 }
-// Fallback
-setTimeout(()=>{ if(gameState==='loading') init(); },4000);
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  startWhenReady();
+} else {
+  document.addEventListener('DOMContentLoaded', startWhenReady);
+}
+
+// Fallback: 3 saniye sonra hâlâ başlamadıysa zorla başlat
+setTimeout(function() { if (!window.gameInitialized) init(); }, 3000);
 
 })();
 </script>
