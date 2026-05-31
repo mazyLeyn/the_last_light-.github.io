@@ -74,6 +74,18 @@ const T_TEXT = {
     controlsTitle:'KONTROLLER',
     zoneNames:['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'],
     introTxts:["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""],
+    npc0lines:["Uyan, küçük ışık...","Sen bu dünyanın son parıltısısın.","Karanlık her yeri sardı. Ama sen hâlâ parlıyorsun.","İlerle... Kristalleri bul.","Onlar sana geçmişi ve yolu gösterecek.","Dikkatli ol — karanlık derin çukurlar açtı."],
+    npc1lines:["Sonunda buradasın, küçük ışık.","Tüm parçaları topladın... ya da ne kadar bulabildiysen.","Şimdi bir seçim yapmalısın.","Işığını bu dünyaya bırakabilirsin.","Karanlığı sonsuza dek kovarsın — ama sen söneceksin.","Ya da ışığını kendin için saklayabilirsin.","Dünya karanlıkta kalır, ama sen var olmaya devam edersin.","Seçimini yap: Sola git → Fedakârlık | Sağa git → Kendini Koru"],
+    crystDlg:[
+      ["Fragman 1: Bir zamanlar bu dünya ışıkla doluydu.","Her canlı kendi parıltısını taşırdı.","Ama bir gün... karanlık geldi ve her şeyi yuttu."],
+      ["Fragman 2: Karanlık yavaş yavaş yayıldı.","Önce gölgeler uzadı, sonra gece hiç bitmedi.","İnsanlar ışıklarını kaybettiler — birer birer söndüler."],
+      ["Fragman 3: Köyler terk edildi.","İnsanlar karanlıktan kaçtı ama gidecek yer kalmamıştı.","Sadece bir efsane kaldı — Son Işık hakkında."],
+      ["Fragman 4: Efsaneye göre, dünyanın derinliklerinde bir Kaynak var.","Oraya ulaşan son ışık, karanlığı ebediyen kovabilir.","Ama bunun bir bedeli var..."],
+      ["Fragman 5: Madenler bir zamanlar kristal çıkarırdı.","Kristaller ışığı depolardı, güneşten bile güçlü.","Şimdi sadece sönmüş parçalar kaldı — ama hafızaları hâlâ diri."],
+      ["Fragman 6: Uçurumun ötesinde hava farklıydı.","Rüzgâr eski şarkılar fısıldıyordu.","Bir zamanlar burada güneşten yapılma bir köprü varmış."],
+      ["Fragman 7: Kaynak yaklaşıyor, hissedebiliyorum.","Kristallerin parıltısı yoğunlaşıyor.","İçimde bir ses: 'Hazır mısın bedeli ödemeye?'"],
+      ["Fragman 8: Son kristal — tüm parçalar birleşiyor.","Hikâye tamamlanıyor. Artık gerçeği biliyorum.","Seçim zamanı geldi. Ne yapacağım bana kalmış."]
+    ],
     endSacrifice:["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"],
     endSelfish:["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"],
   },
@@ -93,6 +105,18 @@ const T_TEXT = {
     controlsTitle:'CONTROLS',
     zoneNames:['Awakening','Abandoned Village','Forgotten Mines','Echoing Ravine','The Source'],
     introTxts:["Once, the world was full of light...","But darkness came and swallowed everything.","Now only one light remains.","You.",""],
+    npc0lines:["Awaken, little light...","You are the last spark of this world.","Darkness has spread everywhere. Yet you still shine.","Move forward... Find the crystals.","They will show you the past and the path.","Be careful — the darkness has opened deep pits."],
+    npc1lines:["You are finally here, little light.","You have gathered all the pieces... or as many as you could.","Now you must make a choice.","You can give your light to this world.","The darkness will be driven away forever — but you will fade.","Or you can keep your light for yourself.","The world stays dark, but you continue to exist.","Make your choice: Go left → Sacrifice | Go right → Self-Preservation"],
+    crystDlg:[
+      ["Fragment 1: Once, this world was full of light.","Every living being carried their own glow.","But one day... darkness came and swallowed everything."],
+      ["Fragment 2: The darkness spread slowly.","First the shadows grew long, then the night never ended.","People lost their lights — they went out one by one."],
+      ["Fragment 3: Villages were abandoned.","People fled the dark but there was nowhere left to go.","Only one legend remained — about the Last Light."],
+      ["Fragment 4: According to legend, deep within the world lies a Source.","The last light that reaches it can drive away the darkness forever.","But there is a price..."],
+      ["Fragment 5: The mines once yielded crystals.","The crystals stored light, stronger even than the sun.","Now only dim shards remain — but their memories still live."],
+      ["Fragment 6: The air beyond the ravine felt different.","The wind whispered ancient songs.","There was once a bridge here, built from sunlight."],
+      ["Fragment 7: The Source draws near, I can feel it.","The glow of the crystals grows stronger.","A voice within: 'Are you ready to pay the price?'"],
+      ["Fragment 8: The final crystal — all pieces converge.","The story is complete. I know the truth now.","The moment of choice is here. What I do is up to me."]
+    ],
     endSacrifice:["You gave up your light.","The darkness began to recede...","The world was illuminated once more.","But you... are fading.","You smiled in your last breath.","Because you knew —","even if a light goes out,","the glow it leaves lasts forever.","","THE END","— Sacrifice Ending —"],
     endSelfish:["You kept your light for yourself.","The world remained in darkness.","But you... exist. Alone.","You shine in an endless night.","No one sees, no one knows.","Perhaps one day...","another light will rise.","Perhaps it will do what you could not.","","THE END","— Selfish Ending —"],
   }
@@ -391,7 +415,7 @@ levels.push(mkLevel(130,23,(lvl,t)=>{
   lvl.cps.push({x:50*TILE,y:18*TILE});
   lvl.cps.push({x:90*TILE,y:14*TILE});
   lvl.npcs.push({x:19*TILE,y:98,w:8,h:20,
-    lines:["Uyan, küçük ışık...","Sen bu dünyanın son parıltısısın.","Karanlık her yeri sardı. Ama sen hâlâ parlıyorsun.","İlerle... Kristalleri bul.","Onlar sana geçmişi ve yolu gösterecek.","Dikkatli ol — karanlık derin çukurlar açtı."],
+    linesKey:'npc0lines',
     done:false, type:'tree'});
   lvl.door={x:125*TILE,y:17*TILE};
 }));
@@ -505,16 +529,7 @@ levels.push(mkLevel(110,23,(lvl,t)=>{
   lvl.cps.push({x:35*TILE,y:11*TILE});
   lvl.cps.push({x:66*TILE,y:10*TILE});
   lvl.npcs.push({x:92*TILE,y:17*TILE,w:8,h:20,
-    lines:[
-      "Sonunda buradasın, küçük ışık.",
-      "Tüm parçaları topladın... ya da ne kadar bulabildiysen.",
-      "Şimdi bir seçim yapmalısın.",
-      "Işığını bu dünyaya bırakabilirsin.",
-      "Karanlığı sonsuza dek kovarsın — ama sen söneceksin.",
-      "Ya da ışığını kendin için saklayabilirsin.",
-      "Dünya karanlıkta kalır, ama sen var olmaya devam edersin.",
-      "Seçimini yap: Sola git → Fedakârlık | Sağa git → Kendini Koru"
-    ],
+    linesKey:'npc1lines',
     done:false, type:'source'});
   fillR(t,82,18,85,19,T.CHOICE_A);
   fillR(t,99,18,102,19,T.CHOICE_B);
@@ -569,16 +584,7 @@ function wrapTxt(c,text,x,y,mw,lh) {
   c.fillText(line.trim(),x,ly);
 }
 
-const crystDlg = [
-  ["Fragman 1: Bir zamanlar bu dünya ışıkla doluydu.","Her canlı kendi parıltısını taşırdı.","Ama bir gün... karanlık geldi ve her şeyi yuttu."],
-  ["Fragman 2: Karanlık yavaş yavaş yayıldı.","Önce gölgeler uzadı, sonra gece hiç bitmedi.","İnsanlar ışıklarını kaybettiler — birer birer söndüler."],
-  ["Fragman 3: Köyler terk edildi.","İnsanlar karanlıktan kaçtı ama gidecek yer kalmamıştı.","Sadece bir efsane kaldı — Son Işık hakkında."],
-  ["Fragman 4: Efsaneye göre, dünyanın derinliklerinde bir Kaynak var.","Oraya ulaşan son ışık, karanlığı ebediyen kovabilir.","Ama bunun bir bedeli var..."],
-  ["Fragman 5: Madenler bir zamanlar kristal çıkarırdı.","Kristaller ışığı depolardı, güneşten bile güçlü.","Şimdi sadece sönmüş parçalar kaldı — ama hafızaları hâlâ diri."],
-  ["Fragman 6: Uçurumun ötesinde hava farklıydı.","Rüzgâr eski şarkılar fısıldıyordu.","Bir zamanlar burada güneşten yapılma bir köprü varmış."],
-  ["Fragman 7: Kaynak yaklaşıyor, hissedebiliyorum.","Kristallerin parıltısı yoğunlaşıyor.","İçimde bir ses: 'Hazır mısın bedeli ödemeye?'"],
-  ["Fragman 8: Son kristal — tüm parçalar birleşiyor.","Hikâye tamamlanıyor. Artık gerçeği biliyorum.","Seçim zamanı geldi. Ne yapacağım bana kalmış."]
-];
+function getCrystDlg(id) { return tx('crystDlg')[id]; }
 
 function drawParallax(lvl) {
   const cols=lvl.pcolors;
@@ -1076,14 +1082,14 @@ function updatePlay() {
     if (Math.abs(player.x-c.x)<10&&Math.abs(player.y-c.y)<10) {
       c.col=true; fragments++; playCrystal();
       for (let i=0;i<14;i++) emit(c.x+4,c.y+4,(Math.random()-0.5)*2,(Math.random()-0.5)*2,35,1,'#88eeff','spark');
-      if (crystDlg[c.id]) startDlg(crystDlg[c.id]);
+      if (getCrystDlg(c.id)) startDlg(getCrystDlg(c.id));
     }
   }
   for (let cp of lvl.cps) { if (Math.abs(player.x-cp.x)<14&&Math.abs(player.y-cp.y)<14) { checkpointX=cp.x; checkpointY=cp.y; } }
   if (isInteract()) {
     for (let npc of lvl.npcs) {
       if (Math.abs(player.x-npc.x)+Math.abs(player.y-npc.y)<40&&!npc.done) {
-        npc.done=true; startDlg(npc.lines);
+        npc.done=true; startDlg(npc.linesKey ? tx(npc.linesKey) : npc.lines);
       }
     }
   }
