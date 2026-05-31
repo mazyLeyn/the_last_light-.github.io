@@ -73,6 +73,7 @@ const T_TEXT = {
     goBack:'Geri: ESC / Enter',
     controlsTitle:'KONTROLLER',
     zoneNames:['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'],
+    introTxts:["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""],
     endSacrifice:["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"],
     endSelfish:["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"],
   },
@@ -91,6 +92,7 @@ const T_TEXT = {
     goBack:'Back: ESC / Enter',
     controlsTitle:'CONTROLS',
     zoneNames:['Awakening','Abandoned Village','Forgotten Mines','Echoing Ravine','The Source'],
+    introTxts:["Once, the world was full of light...","But darkness came and swallowed everything.","Now only one light remains.","You.",""],
     endSacrifice:["You gave up your light.","The darkness began to recede...","The world was illuminated once more.","But you... are fading.","You smiled in your last breath.","Because you knew —","even if a light goes out,","the glow it leaves lasts forever.","","THE END","— Sacrifice Ending —"],
     endSelfish:["You kept your light for yourself.","The world remained in darkness.","But you... exist. Alone.","You shine in an endless night.","No one sees, no one knows.","Perhaps one day...","another light will rise.","Perhaps it will do what you could not.","","THE END","— Selfish Ending —"],
   }
@@ -1415,16 +1417,16 @@ function drawCtrlScreen() {
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
 
-const introTxts=["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""];
 function updateIntro() {
   introTimer++;
   if (introTimer>300||jp['Space']||jp['Enter']) {
     introStep++; introTimer=0;
-    if (introStep>=introTxts.length) startFade(1,()=>startLevel(0));
+    if (introStep>=tx('introTxts').length) startFade(1,()=>startLevel(0));
   }
 }
 function drawIntro() {
   renderCtx.fillStyle='#020204'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
+  const introTxts=tx('introTxts');
   if (introStep<introTxts.length&&introTxts[introStep]) {
     const a=Math.min(1,introTimer/35);
     renderCtx.save(); renderCtx.globalAlpha=a;
@@ -1451,9 +1453,6 @@ function drawPause() {
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
   });
 }
-
-const endSacrifice=T_TEXT.TR.endSacrifice;
-const endSelfish=T_TEXT.TR.endSelfish;
 
 function updateEnding() { endingTimer++; }
 function drawEnding() {
