@@ -1317,7 +1317,7 @@ function drawCtrlScreen() {
 const introTxts=["Bir zamanlar dünya ışıkla doluydu...","Ama karanlık geldi ve her şeyi yuttu.","Şimdi sadece bir ışık kaldı.","Sen.",""];
 function updateIntro() {
   introTimer++;
-  if (introTimer>130||jp['Space']||jp['Enter']) {
+  if (introTimer>240||jp['Space']||jp['Enter']) {
     introStep++; introTimer=0;
     if (introStep>=introTxts.length) startFade(1,()=>startLevel(0));
   }
@@ -1359,7 +1359,7 @@ function drawEnding() {
   renderCtx.fillStyle=endingType==='sacrifice'?'#030508':'#050303';
   renderCtx.fillRect(0,0,WIDTH,HEIGHT);
   const texts=endingType==='sacrifice'?endSacrifice:endSelfish;
-  const speed=160;
+  const speed=240;
   const grp=Math.floor(endingTimer/speed);
   const alpha=Math.min(1,(endingTimer%speed)/30);
   renderCtx.save(); renderCtx.font='7px "Press Start 2P",monospace';
