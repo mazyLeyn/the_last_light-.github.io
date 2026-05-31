@@ -141,16 +141,21 @@ function isInteract() { return jp['KeyE'] || jp['Enter']; }
 function isPause() { return jp['Escape']; }
 function clearJP() { for (let k in jp) delete jp[k]; }
 
-let actx = null, masterGain = null, audioReady = false;
+let actx = null, masterGain = null, sfxGain = null, audioReady = false;
 let ambOsc = null, windSrc = null, ambGain2 = null, windGain2 = null;
 
 function initAudio() {
   if (audioReady) return;
   try {
     actx = new (window.AudioContext || window.webkitAudioContext)();
+    // masterGain = ambient müzik için (alçak)
     masterGain = actx.createGain();
-    masterGain.gain.value = 0.6;
+    masterGain.gain.value = 0.11;
     masterGain.connect(actx.destination);
+    // sfxGain = ses efektleri için (daha yüksek)
+    sfxGain = actx.createGain();
+    sfxGain.gain.value = 0.55;
+    sfxGain.connect(actx.destination);
     audioReady = true;
     if (actx.state === 'suspended') actx.resume().catch(()=>{});
   } catch(e) {}
@@ -165,7 +170,7 @@ function playTone(freq, dur, type, vol, delay) {
   o.frequency.setValueAtTime(freq, t);
   g.gain.setValueAtTime(vol || 0.1, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  o.connect(g); g.connect(masterGain);
+  o.connect(g); g.connect(sfxGain);
   o.start(t); o.stop(t + dur);
 }
 
@@ -195,13 +200,13 @@ function playStep() {
   o.frequency.value = 120 + Math.random() * 40;
   og.gain.setValueAtTime(0.04, actx.currentTime);
   og.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.04);
-  o.connect(og); og.connect(masterGain);
+  o.connect(og); og.connect(sfxGain);
   o.start(); o.stop(actx.currentTime + 0.04);
   const src = actx.createBufferSource();
   const ng = actx.createGain();
   ng.gain.value = 0.55;
   src.buffer = buf;
-  src.connect(flt); flt.connect(ng); ng.connect(masterGain);
+  src.connect(flt); flt.connect(ng); ng.connect(sfxGain);
   src.start();
 }
 
@@ -223,7 +228,7 @@ function playTick() {
   const g = actx.createGain();
   g.gain.value = 0.45;
   src.buffer = buf;
-  src.connect(flt); flt.connect(g); g.connect(masterGain);
+  src.connect(flt); flt.connect(g); g.connect(sfxGain);
   src.start(t);
   const o = actx.createOscillator();
   const og = actx.createGain();
@@ -232,7 +237,7 @@ function playTick() {
   o.frequency.exponentialRampToValueAtTime(90, t + 0.03);
   og.gain.setValueAtTime(0.12, t);
   og.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-  o.connect(og); og.connect(masterGain);
+  o.connect(og); og.connect(sfxGain);
   o.start(t); o.stop(t + 0.04);
 }
 
@@ -246,7 +251,7 @@ function playJump() {
   o1.frequency.exponentialRampToValueAtTime(420, t + 0.14);
   g1.gain.setValueAtTime(0.09, t);
   g1.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-  o1.connect(g1); g1.connect(masterGain);
+  o1.connect(g1); g1.connect(sfxGain);
   o1.start(t); o1.stop(t + 0.18);
   const o2 = actx.createOscillator();
   const g2 = actx.createGain();
@@ -255,7 +260,7 @@ function playJump() {
   o2.frequency.exponentialRampToValueAtTime(700, t + 0.13);
   g2.gain.setValueAtTime(0.04, t + 0.02);
   g2.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-  o2.connect(g2); g2.connect(masterGain);
+  o2.connect(g2); g2.connect(sfxGain);
   o2.start(t + 0.02); o2.stop(t + 0.16);
 }
 
@@ -264,47 +269,241 @@ function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 
 function startAmbient(lvl) {
   if (!actx) return;
   stopAmbient();
-  const scales = [
-    [220, 261, 294, 330, 392],
-    [196, 220, 261, 294, 349],
-    [174, 196, 220, 261, 294],
-    [164, 196, 220, 246, 294],
-    [220, 246, 294, 330, 370],
-  ];
-  const scale = scales[Math.min(lvl, scales.length - 1)];
+
   windGain2 = actx.createGain();
-  windGain2.gain.value = 0;
+  windGain2.gain.value = 1;
   windGain2.connect(masterGain);
-  let melodyActive = true;
-  function schedMelody(startTime) {
-    if (!melodyActive) return;
-    const gap = 2.2 + Math.random() * 3.5;
-    const note = scale[Math.floor(Math.random() * scale.length)];
-    const harmNote = scale[Math.floor(Math.random() * scale.length)];
-    const t = startTime;
-    const o = actx.createOscillator();
-    const g = actx.createGain();
+
+  // BPM seviyeye göre artar
+  const BPM = [95, 100, 106, 112, 118][Math.min(lvl, 4)];
+  const s16 = (60 / BPM) / 4; // 1 on-altılık nota süresi
+
+  // Do minör pentatonik — her seviyede yarım ton yukarı
+  const roots = [130.81, 138.59, 146.83, 155.56, 164.81];
+  const R = roots[Math.min(lvl, 4)];
+  const N = {
+    C:R, D:R*(9/8), Eb:R*(6/5), G:R*(3/2), Ab:R*(8/5),
+    C2:R*2, D2:R*(9/4), Eb2:R*(6/5)*2, G2:R*3, _:0
+  };
+
+  let active = true;
+  let scheduledNodes = [];
+
+  // --- Compressor (tüm mix için) ---
+  const comp = actx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.knee.value = 8;
+  comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.12;
+  comp.connect(masterGain);
+
+  // --- Delay (melodi echo) ---
+  const dly = actx.createDelay(1.0);
+  dly.delayTime.value = s16 * 3; // dotted 8th delay
+  const dlyFb = actx.createGain(); dlyFb.gain.value = 0.18;
+  const dlyMix = actx.createGain(); dlyMix.gain.value = 0.12;
+  dly.connect(dlyFb); dlyFb.connect(dly);
+  dly.connect(dlyMix); dlyMix.connect(comp);
+
+  function reg(node) { scheduledNodes.push(node); return node; }
+
+  // --- Kick drum ---
+  function kick(t) {
+    const o = reg(actx.createOscillator());
+    const g = reg(actx.createGain());
     o.type = 'sine';
-    o.frequency.value = note;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.028, t + 0.18);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
-    o.connect(g); g.connect(masterGain);
-    o.start(t); o.stop(t + 1.4);
-    const o2 = actx.createOscillator();
-    const g2 = actx.createGain();
-    o2.type = 'triangle';
-    o2.frequency.value = harmNote * 1.5;
-    g2.gain.setValueAtTime(0, t + 0.05);
-    g2.gain.linearRampToValueAtTime(0.010, t + 0.25);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
-    o2.connect(g2); g2.connect(masterGain);
-    o2.start(t + 0.05); o2.stop(t + 1.2);
-    const tid = setTimeout(() => { if (melodyActive) schedMelody(actx.currentTime); }, gap * 1000);
-    windGain2._tid = tid;
+    o.frequency.setValueAtTime(160, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.28, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g); g.connect(comp);
+    o.start(t); o.stop(t + 0.2);
+    // click transient
+    const sr = actx.sampleRate;
+    const buf = actx.createBuffer(1, Math.floor(sr*0.012), sr);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    const ns = reg(actx.createBufferSource()); ns.buffer = buf;
+    const ng = reg(actx.createGain()); ng.gain.value = 0.07;
+    ns.connect(ng); ng.connect(comp); ns.start(t);
   }
-  schedMelody(actx.currentTime + 0.5);
-  windGain2._stop = () => { melodyActive = false; if (windGain2._tid) clearTimeout(windGain2._tid); };
+
+  // --- Hi-hat ---
+  function hat(t, vol) {
+    const sr = actx.sampleRate;
+    const len = Math.floor(sr * 0.04);
+    const buf = actx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);
+    const src = reg(actx.createBufferSource()); src.buffer = buf;
+    const flt = reg(actx.createBiquadFilter());
+    flt.type = 'highpass'; flt.frequency.value = 7000;
+    const g = reg(actx.createGain()); g.gain.value = (vol||0.055);
+    src.connect(flt); flt.connect(g); g.connect(comp);
+    src.start(t);
+  }
+
+  // --- Snare (ghost) ---
+  function snare(t, vol) {
+    const sr = actx.sampleRate;
+    const len = Math.floor(sr * 0.09);
+    const buf = actx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2)*0.7;
+    const src = reg(actx.createBufferSource()); src.buffer = buf;
+    const flt = reg(actx.createBiquadFilter());
+    flt.type = 'bandpass'; flt.frequency.value = 2200; flt.Q.value = 0.7;
+    const g = reg(actx.createGain()); g.gain.value = vol||0.12;
+    src.connect(flt); flt.connect(g); g.connect(comp);
+    src.start(t);
+    // body tone
+    const o = reg(actx.createOscillator()); const og = reg(actx.createGain());
+    o.type='triangle'; o.frequency.value=180;
+    og.gain.setValueAtTime(0.0001,t); og.gain.linearRampToValueAtTime((vol||0.12)*0.3,t+0.004);
+    og.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+    o.connect(og); og.connect(comp); o.start(t); o.stop(t+0.08);
+  }
+
+  // --- Bas nota ---
+  function bass(t, freq, dur) {
+    const o = reg(actx.createOscillator()); const g = reg(actx.createGain());
+    const flt = reg(actx.createBiquadFilter());
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(freq*0.5, t);
+    flt.type = 'lowpass'; flt.frequency.value = 420; flt.Q.value = 1.1;
+    const v = 0.14;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.015);
+    g.gain.setValueAtTime(v*0.75, t + dur*0.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur*0.88);
+    o.connect(flt); flt.connect(g); g.connect(comp);
+    o.start(t); o.stop(t + dur);
+  }
+
+  // --- Melodi notası (lead) ---
+  function mel(t, freq, dur, vol) {
+    if (!freq) return;
+    const o = reg(actx.createOscillator()); const g = reg(actx.createGain());
+    o.type = 'square';
+    // square ama lowpass ile yumuşatılmış = sıcak, canlı karakter
+    const flt = reg(actx.createBiquadFilter());
+    flt.type = 'lowpass'; flt.frequency.value = 1800; flt.Q.value = 0.5;
+    const v = (0.028 + lvl*0.002) * (vol||1);
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.018);
+    g.gain.setValueAtTime(v*0.82, t + dur*0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur*0.9);
+    o.connect(flt); flt.connect(g); g.connect(comp);
+    o.connect(flt); flt.connect(dly); // delay send
+    o.start(t); o.stop(t + dur);
+  }
+
+  // ============================================================
+  // RİTİM + MELODİ PATERNİ  (1 bar = 16 on-altılık = 4 beat)
+  // Motif: C C C C / D Eb / C C C / D Eb / C . C . D . / C C C C D Eb
+  // ============================================================
+  // kick pattern (bar içinde 16 slot, 1=vur)
+  const kickPat  = [1,0,0,0, 1,0,0,1, 0,0,1,0, 0,1,0,0];
+  const hatPat   = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1];
+  const snarePat = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
+  // ghost snare sadece lvl>=2
+  const ghostPat = [0,0,1,0, 0,1,0,0, 0,1,0,0, 0,0,1,0];
+
+  // Bas groove (16 slot): [nota_indeksi, -1=sus]
+  // indeks: 0=C*0.5, 1=D*0.5, 2=Eb*0.5, 3=G*0.5, 4=Ab*0.5
+  const bassFreqs = [R*0.5, N.D*0.5, N.Eb*0.5, N.G*0.5, N.Ab*0.5];
+  const bassPat = [
+    0,-1,-1, 0,  -1,-1, 2,-1,  0,-1,-1, 0,  3,-1, 0,-1
+  ];
+
+  // Melodi motifi — 2 bar'lık sekans
+  // [nota, süre(x s16)]
+  const melSeq = [
+    [N.C,1],[N.C,1],[N.C,1],[N.C,2],[N.D,2],[N.Eb,3],
+    [N.C,1],[N.C,1],[N.C,2],[N.D,2],[N.Eb,3],
+    [N.C,4],[N.C,4],[N.D,4],
+    [N.C,1],[N.C,1],[N.C,1],[N.C,2],[N.D,2],[N.Eb,5],
+  ];
+  // bridge (bölüm 2+) — gerilim tırmanması
+  const melBridge = lvl >= 2 ? [
+    [N.Eb,2],[N.G,2],[N.Ab,4],
+    [N.G,2],[N.Eb,2],[N.D,4],
+    [N.C,1],[N.C,1],[N.D,2],[N.Eb,4],
+  ] : [];
+  const fullMelody = [...melSeq, ...melBridge];
+
+  // Toplam melodi süresi (bar sayısı)
+  const melDurS16 = fullMelody.reduce((a,[,d])=>a+d,0);
+
+  function scheduleBar(barStart, barIdx) {
+    if (!active) return;
+    for (let i=0;i<16;i++) {
+      const t = barStart + i*s16;
+      if (kickPat[i])  kick(t);
+      if (hatPat[i])   hat(t, i%2===0 ? 0.06 : 0.03);
+      if (snarePat[i]) snare(t, 0.14);
+      if (lvl>=2 && ghostPat[i]) snare(t, 0.05);
+      if (bassPat[i]>=0) {
+        const nextChange = bassPat.findIndex((v,j)=>j>i&&v>=0);
+        const nextI = nextChange===-1 ? 16 : nextChange;
+        bass(t, bassFreqs[bassPat[i]], (nextI-i)*s16*0.92);
+      }
+    }
+  }
+
+  // Melodi tamponlu zamanlama
+  let melPos = 0; // melSeq içinde neredeyiz
+  function scheduleMelody(startT) {
+    if (!active) return;
+    let t = startT;
+    for (const [freq, dur] of fullMelody) {
+      mel(t, freq, dur*s16*0.88, 1.0);
+      t += dur * s16;
+    }
+    return t; // bitiş zamanı
+  }
+
+  // Ana zamanlayıcı — lookahead scheduler
+  const LOOK = 0.25; // saniyelik lookahead penceresi
+  const SCHED_INT = 100; // ms arayla kontrol
+  let nextBarTime = actx.currentTime + 0.05;
+  let barCount = 0;
+  let melScheduledUntil = -1;
+
+  function scheduler() {
+    if (!active) return;
+    while (nextBarTime < actx.currentTime + LOOK) {
+      scheduleBar(nextBarTime, barCount);
+      // Melodi: her döngü başında yeniden zamanla
+      if (nextBarTime >= melScheduledUntil) {
+        melScheduledUntil = scheduleMelody(nextBarTime);
+      }
+      nextBarTime += 16 * s16;
+      barCount++;
+    }
+    windGain2._tid = setTimeout(scheduler, SCHED_INT);
+  }
+  scheduler();
+
+  // Ambient osc (çok altta, zemin doku)
+  ambOsc = actx.createOscillator();
+  const ambG = actx.createGain();
+  ambOsc.type = 'sine';
+  ambOsc.frequency.value = R * 0.25;
+  ambG.gain.setValueAtTime(0, actx.currentTime);
+  ambG.gain.linearRampToValueAtTime(0.06, actx.currentTime + 1.5);
+  const lfo = actx.createOscillator(); const lfoG = actx.createGain();
+  lfo.frequency.value = 0.15; lfoG.gain.value = 0.5;
+  lfo.connect(lfoG); lfoG.connect(ambOsc.frequency);
+  lfo.start(); windSrc = lfo;
+  ambOsc.connect(ambG); ambG.connect(comp);
+  ambOsc.start();
+
+  windGain2._stop = () => {
+    active = false;
+    if (windGain2._tid) clearTimeout(windGain2._tid);
+    scheduledNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
+  };
 }
 
 function stopAmbient() {
@@ -1282,7 +1481,8 @@ function updateSettings() {
   if (jp['Enter']||jp['Space']||jp['ArrowLeft']||jp['ArrowRight']||jp['KeyA']||jp['KeyD']) {
     if (settingSel===0) {
       soundEnabled=!soundEnabled;
-      if (masterGain) masterGain.gain.value = soundEnabled ? 0.6 : 0;
+      if (masterGain) masterGain.gain.value = soundEnabled ? 0.11 : 0;
+      if (sfxGain) sfxGain.gain.value = soundEnabled ? 0.55 : 0;
     } else {
       lang = lang==='TR' ? 'ENG' : 'TR';
     }
