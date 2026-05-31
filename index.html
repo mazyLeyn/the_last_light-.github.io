@@ -53,6 +53,49 @@ let menuSel = 0, showCtrl = false, showSettings = false;
 let soundEnabled = true;
 let introStep = 0, introTimer = 0;
 let endingTimer = 0;
+let lang = 'TR'; // 'TR' veya 'ENG'
+let settingSel = 0; // 0=ses, 1=dil
+let zoneTimer = 0;
+
+const T_TEXT = {
+  TR: {
+    play:'Oyna', controls:'Kontroller', settings:'Ayarlar',
+    atmospheric:'Atmosferik bir yolculuk',
+    settingsTitle:'AYARLAR', masterVol:'Ana Ses', on:'AÇIK', off:'KAPALI',
+    langLabel:'Dil', change:'Enter/Space: değiştir', back:'ESC: geri',
+    pause:'DURAKLAT', resume:'Devam Et', mainMenu:'Menüye Dön',
+    returnMenu:'Menüye dönmek için Enter',
+    fragments:'Fragman',
+    move:'Hareket: Ok Tuşları / WASD',
+    jump:'Zıpla: Space (basılı tut = yüksek)',
+    interact:'Etkileşim: E',
+    pauseKey:'Duraklat: ESC',
+    goBack:'Geri: ESC / Enter',
+    controlsTitle:'KONTROLLER',
+    zoneNames:['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'],
+    endSacrifice:["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"],
+    endSelfish:["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"],
+  },
+  ENG: {
+    play:'Play', controls:'Controls', settings:'Settings',
+    atmospheric:'An atmospheric journey',
+    settingsTitle:'SETTINGS', masterVol:'Master Vol', on:'ON', off:'OFF',
+    langLabel:'Language', change:'Enter/Space: toggle', back:'ESC: back',
+    pause:'PAUSED', resume:'Resume', mainMenu:'Main Menu',
+    returnMenu:'Press Enter to return to menu',
+    fragments:'Fragment',
+    move:'Move: Arrow Keys / WASD',
+    jump:'Jump: Space (hold = higher)',
+    interact:'Interact: E',
+    pauseKey:'Pause: ESC',
+    goBack:'Back: ESC / Enter',
+    controlsTitle:'CONTROLS',
+    zoneNames:['Awakening','Abandoned Village','Forgotten Mines','Echoing Ravine','The Source'],
+    endSacrifice:["You gave up your light.","The darkness began to recede...","The world was illuminated once more.","But you... are fading.","You smiled in your last breath.","Because you knew —","even if a light goes out,","the glow it leaves lasts forever.","","THE END","— Sacrifice Ending —"],
+    endSelfish:["You kept your light for yourself.","The world remained in darkness.","But you... exist. Alone.","You shine in an endless night.","No one sees, no one knows.","Perhaps one day...","another light will rise.","Perhaps it will do what you could not.","","THE END","— Selfish Ending —"],
+  }
+};
+function tx(key) { return T_TEXT[lang][key]; }
 
 const keys = {};
 const jp = {};
@@ -899,10 +942,38 @@ function drawDeco(lvl) {
 function drawHUD() {
   renderCtx.save();
   renderCtx.fillStyle='#99aabb'; renderCtx.font='6px "Press Start 2P",monospace';
-  renderCtx.fillText(`Fragman: ${fragments}/${totalFragments}`,4,10);
-  const names=['Uyanış','Terk Edilmiş Köy','Unutulmuş Madenler','Yankılanan Uçurum','Kaynak'];
-  renderCtx.fillStyle='#556'; renderCtx.fillText(names[currentLevel],4,19);
+  renderCtx.fillText(`${tx('fragments')}: ${fragments}/${totalFragments}`,4,10);
+  renderCtx.fillStyle='#556'; renderCtx.fillText(tx('zoneNames')[currentLevel],4,19);
   renderCtx.restore();
+
+  // Bölge ismi animasyonu
+  if (zoneTimer < 200) {
+    zoneTimer++;
+    const FADE_IN=35, HOLD=120, FADE_OUT=45;
+    let alpha, slideY;
+    if (zoneTimer<=FADE_IN) { alpha=zoneTimer/FADE_IN; slideY=(1-alpha)*20; }
+    else if (zoneTimer<=FADE_IN+HOLD) { alpha=1; slideY=0; }
+    else { const t=(zoneTimer-FADE_IN-HOLD)/FADE_OUT; alpha=Math.max(0,1-t); slideY=0; }
+    if (alpha>0) {
+      const name=tx('zoneNames')[currentLevel];
+      renderCtx.save();
+      renderCtx.globalAlpha=alpha;
+      const cy=Math.floor(HEIGHT/2)+Math.floor(slideY);
+      renderCtx.fillStyle='rgba(0,0,0,0.5)';
+      renderCtx.fillRect(0,cy-16,WIDTH,24);
+      renderCtx.fillStyle='rgba(140,170,210,0.4)';
+      renderCtx.fillRect(0,cy-16,WIDTH,1);
+      renderCtx.fillRect(0,cy+8,WIDTH,1);
+      renderCtx.font='9px "Press Start 2P",monospace';
+      const tw=renderCtx.measureText(name).width;
+      const tx2=Math.floor((WIDTH-tw)/2);
+      renderCtx.fillStyle='rgba(0,0,10,0.9)';
+      renderCtx.fillText(name,tx2+1,cy+1);
+      renderCtx.fillStyle='#c8dcf0';
+      renderCtx.fillText(name,tx2,cy);
+      renderCtx.restore();
+    }
+  }
 }
 
 function drawChoices() {
@@ -1056,6 +1127,7 @@ function startLevel(idx) {
   gameState='play';
   startAmbient(idx);
   fadeAlpha=1; fadeDir=-1;
+  zoneTimer=0;
 }
 
 function startFade(dir,cb) { fadeDir=dir; fadeCallback=cb; if(dir===1)fadeAlpha=0; }
@@ -1196,10 +1268,16 @@ function updateMenu() {
 }
 
 function updateSettings() {
-  if (jp['Escape']) { showSettings=false; return; }
+  if (jp['Escape']) { showSettings=false; settingSel=0; return; }
+  if (jp['ArrowDown']||jp['KeyS']) settingSel=(settingSel+1)%2;
+  if (jp['ArrowUp']||jp['KeyW']) settingSel=(settingSel+2)%2;
   if (jp['Enter']||jp['Space']||jp['ArrowLeft']||jp['ArrowRight']||jp['KeyA']||jp['KeyD']) {
-    soundEnabled=!soundEnabled;
-    if (masterGain) masterGain.gain.value = soundEnabled ? 0.6 : 0;
+    if (settingSel===0) {
+      soundEnabled=!soundEnabled;
+      if (masterGain) masterGain.gain.value = soundEnabled ? 0.6 : 0;
+    } else {
+      lang = lang==='TR' ? 'ENG' : 'TR';
+    }
   }
 }
 
@@ -1273,9 +1351,9 @@ function drawMenu() {
 
   // Alt yazı ve menü seçenekleri
   renderCtx.fillStyle='#334'; renderCtx.font='6px "Press Start 2P",monospace';
-  const subW=renderCtx.measureText('Atmosferik bir yolculuk').width;
-  renderCtx.fillText('Atmosferik bir yolculuk',WIDTH/2-subW/2,108);
-  const items=['Oyna','Kontroller','Ayarlar'];
+  const subW=renderCtx.measureText(tx('atmospheric')).width;
+  renderCtx.fillText(tx('atmospheric'),WIDTH/2-subW/2,108);
+  const items=[tx('play'),tx('controls'),tx('settings')];
   renderCtx.font='7px "Press Start 2P",monospace';
   items.forEach((it,i)=>{
     renderCtx.fillStyle=i===menuSel?'#dde':'#556';
@@ -1291,11 +1369,14 @@ function drawSettingsScreen() {
   renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
-  const titleW=renderCtx.measureText('AYARLAR').width;
-  renderCtx.fillText('AYARLAR',WIDTH/2-titleW/2,36);
+  const titleW=renderCtx.measureText(tx('settingsTitle')).width;
+  renderCtx.fillText(tx('settingsTitle'),WIDTH/2-titleW/2,36);
   renderCtx.font='6px "Press Start 2P",monospace';
-  renderCtx.fillStyle='#dde';
-  renderCtx.fillText('Ana Ses',34,62);
+
+  // Satır 1: Ana Ses
+  const row0sel = settingSel===0;
+  renderCtx.fillStyle=row0sel?'#dde':'#778';
+  renderCtx.fillText((row0sel?'> ':' ')+tx('masterVol'),30,62);
   const bx=WIDTH-62, by=54, bw=40, bh=12;
   renderCtx.fillStyle=soundEnabled?'#2255aa':'#222';
   renderCtx.fillRect(bx,by,bw,bh);
@@ -1305,19 +1386,32 @@ function drawSettingsScreen() {
   renderCtx.fillRect(kx,by+2,8,8);
   renderCtx.fillStyle=soundEnabled?'#aaddff':'#778';
   renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText(soundEnabled?'AÇIK':'KAPALI',bx+2,by+10);
+  renderCtx.fillText(soundEnabled?tx('on'):tx('off'),bx+2,by+10);
+
+  // Satır 2: Dil
+  renderCtx.font='6px "Press Start 2P",monospace';
+  const row1sel = settingSel===1;
+  renderCtx.fillStyle=row1sel?'#dde':'#778';
+  renderCtx.fillText((row1sel?'> ':' ')+tx('langLabel'),30,82);
+  const lbx=WIDTH-62, lby=74, lbw=40, lbh=12;
+  renderCtx.fillStyle='#2255aa'; renderCtx.fillRect(lbx,lby,lbw,lbh);
+  renderCtx.strokeStyle='#556'; renderCtx.strokeRect(lbx,lby,lbw,lbh);
+  renderCtx.fillStyle='#aaddff'; renderCtx.font='5px "Press Start 2P",monospace';
+  renderCtx.fillText(lang,lbx+4,lby+10);
+
   renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText('Enter/Space: değiştir',34,90);
-  renderCtx.fillText('ESC: geri',34,103);
+  renderCtx.fillText(tx('change'),30,108);
+  renderCtx.fillText(tx('back'),30,120);
 }
 
 function drawCtrlScreen() {
   renderCtx.fillStyle='rgba(0,0,0,0.92)'; renderCtx.fillRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.strokeStyle='#334'; renderCtx.strokeRect(18,18,WIDTH-36,HEIGHT-36);
   renderCtx.fillStyle='#99aabb'; renderCtx.font='7px "Press Start 2P",monospace';
-  renderCtx.fillText('KONTROLLER',70,36);
+  const ctW=renderCtx.measureText(tx('controlsTitle')).width;
+  renderCtx.fillText(tx('controlsTitle'),WIDTH/2-ctW/2,36);
   renderCtx.font='6px "Press Start 2P",monospace'; renderCtx.fillStyle='#778';
-  const c=['Hareket: Ok Tuşları / WASD','Zıpla: Space (basılı tut = yüksek)','Etkileşim: E','Duraklat: ESC','','Geri: ESC / Enter'];
+  const c=[tx('move'),tx('jump'),tx('interact'),tx('pauseKey'),'',tx('goBack')];
   c.forEach((l,i)=>renderCtx.fillText(l,30,54+i*13));
 }
 
@@ -1351,21 +1445,21 @@ function updatePause() {
 function drawPause() {
   renderCtx.fillStyle='rgba(0,0,0,0.82)'; renderCtx.fillRect(0,0,WIDTH,HEIGHT);
   renderCtx.fillStyle='#ccd'; renderCtx.font='7px "Press Start 2P",monospace';
-  renderCtx.fillText('DURAKLAT',WIDTH/2-34,55);
-  ['Devam Et','Menüye Dön'].forEach((it,i)=>{
+  renderCtx.fillText(tx('pause'),WIDTH/2-34,55);
+  [tx('resume'),tx('mainMenu')].forEach((it,i)=>{
     renderCtx.fillStyle=i===pauseSel?'#fff':'#556';
     renderCtx.fillText((i===pauseSel?'> ':'  ')+it,WIDTH/2-40,80+i*16);
   });
 }
 
-const endSacrifice=["Işığını bıraktın.","Karanlık çekilmeye başladı...","Dünya yeniden aydınlandı.","Ama sen... sönüyorsun.","Son nefesinde gülümsedin.","Çünkü biliyordun —","bir ışık sönse bile,","bıraktığı parıltı sonsuza dek kalır.","","SON","— Fedakârlık Sonu —"];
-const endSelfish=["Işığını kendin için sakladın.","Dünya karanlıkta kalmaya devam etti.","Ama sen... varsın. Yalnız.","Sonsuz bir gecede parıldıyorsun.","Kimse görmüyor, kimse bilmiyor.","Belki bir gün...","başka bir ışık doğar.","Belki o, senin yapamadığını yapar.","","SON","— Bencillik Sonu —"];
+const endSacrifice=T_TEXT.TR.endSacrifice;
+const endSelfish=T_TEXT.TR.endSelfish;
 
 function updateEnding() { endingTimer++; }
 function drawEnding() {
   renderCtx.fillStyle=endingType==='sacrifice'?'#030508':'#050303';
   renderCtx.fillRect(0,0,WIDTH,HEIGHT);
-  const texts=endingType==='sacrifice'?endSacrifice:endSelfish;
+  const texts=endingType==='sacrifice'?tx('endSacrifice'):tx('endSelfish');
   const speed=600;
   const grp=Math.floor(endingTimer/speed);
   const alpha=Math.min(1,(endingTimer%speed)/30);
@@ -1387,7 +1481,7 @@ function drawEnding() {
   if (endingTimer>speed*Math.ceil(texts.length/3)+150) {
     renderCtx.globalAlpha=0.7+Math.sin(frameCount*0.05)*0.3;
     renderCtx.fillStyle='#778'; renderCtx.font='6px "Press Start 2P",monospace';
-    renderCtx.fillText('Menüye dönmek için Enter',WIDTH/2-62,HEIGHT-14);
+    renderCtx.fillText(tx('returnMenu'),WIDTH/2-62,HEIGHT-14);
     renderCtx.globalAlpha=1;
     if (jp['Enter']||jp['Space']) {
       gameState='menu'; endingTimer=0; fragments=0;
