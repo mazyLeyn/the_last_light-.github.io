@@ -559,22 +559,77 @@ function updateDlg() {
 function drawDlg() {
   if (!dlgActive) return;
   renderCtx.save();
-  renderCtx.fillStyle='rgba(0,0,0,0.88)';
-  renderCtx.fillRect(8,HEIGHT-52,WIDTH-16,46);
-  renderCtx.strokeStyle='#445'; renderCtx.lineWidth=1;
-  renderCtx.strokeRect(8,HEIGHT-52,WIDTH-16,46);
-  renderCtx.fillStyle='#ccd';
-  renderCtx.font='7px "Press Start 2P",monospace';
-  const txt=dlgLines[dlgLine].substring(0,dlgChar);
-  wrapTxt(renderCtx,txt,14,HEIGHT-40,WIDTH-28,9);
-  if (dlgChar>=dlgLines[dlgLine].length) {
-    renderCtx.fillStyle='#889';
-    renderCtx.fillText('▼',WIDTH-20,HEIGHT-12);
+
+  // --- compact, centered, cinematic panel ---
+  const boxW = Math.round(Math.min(WIDTH - 60, 230));
+  const boxH = 30;
+  const bx = Math.round((WIDTH - boxW) / 2);
+  const by = Math.round(HEIGHT - boxH - 10);
+  const pad = 7;
+  const r = 4; // corner radius
+
+  // soft outer glow (very subtle, fake "blur")
+  renderCtx.shadowColor = 'rgba(60,110,190,0.4)';
+  renderCtx.shadowBlur = 6;
+
+  // deep navy/violet glass body
+  renderCtx.fillStyle = 'rgba(8,16,32,0.74)';
+  roundRectPath(renderCtx, bx, by, boxW, boxH, r);
+  renderCtx.fill();
+
+  renderCtx.shadowBlur = 0;
+
+  // thin hairline border
+  renderCtx.strokeStyle = 'rgba(110,170,230,0.5)';
+  renderCtx.lineWidth = 1;
+  roundRectPath(renderCtx, bx + 0.5, by + 0.5, boxW - 1, boxH - 1, r);
+  renderCtx.stroke();
+
+  // small accent corner ticks for an elegant frame feel
+  renderCtx.strokeStyle = 'rgba(150,210,255,0.6)';
+  renderCtx.lineWidth = 1;
+  const tick = 5;
+  renderCtx.beginPath();
+  renderCtx.moveTo(bx, by + tick); renderCtx.lineTo(bx, by); renderCtx.lineTo(bx + tick, by);
+  renderCtx.stroke();
+  renderCtx.beginPath();
+  renderCtx.moveTo(bx + boxW - tick, by + boxH); renderCtx.lineTo(bx + boxW, by + boxH); renderCtx.lineTo(bx + boxW, by + boxH - tick);
+  renderCtx.stroke();
+
+  // text
+  renderCtx.fillStyle = '#d6e8f7';
+  renderCtx.font = '6px "Press Start 2P",monospace';
+  const txt = dlgLines[dlgLine].substring(0, dlgChar);
+  wrapTxt(renderCtx, txt, bx + pad, by + pad + 2, boxW - pad * 2, 8);
+
+  // minimalist floating dot instead of "▼"
+  if (dlgChar >= dlgLines[dlgLine].length) {
+    const bob = Math.sin(dlgTimer * 0.12) * 1.5;
+    renderCtx.fillStyle = 'rgba(140,200,255,0.9)';
+    renderCtx.beginPath();
+    renderCtx.arc(bx + boxW - pad, by + boxH - pad + bob, 1.3, 0, Math.PI * 2);
+    renderCtx.fill();
   }
+
   renderCtx.restore();
 }
 
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
 function wrapTxt(c,text,x,y,mw,lh) {
+  x = Math.round(x); y = Math.round(y);
   const words=text.split(' '); let line='', ly=y;
   for (let w of words) {
     const test=line+w+' ';
