@@ -55,7 +55,7 @@ let soundEnabled = true;
 let introStep = 0, introTimer = 0;
 let endingTimer = 0;
 let lang = 'TR'; // 'TR' veya 'ENG'
-let settingSel = 0; // 0=ses, 1=dil
+let settingSel = 0; // 0=ses, 1=müzik, 2=dil
 let zoneTimer = 0;
 
 const T_TEXT = {
@@ -80,8 +80,8 @@ const T_TEXT = {
     endShare:["Işığını bırakmadın. Saklamadın da.","Onu böldün.","Bir parça Fenerci'ye, bir parça Yankı'ya,","bir parça rüzgârın şarkısına.","Ve bir parça, Sönmüş Olan'a.","Hiçbiri güneş kadar parlak değildi.","Ama uzakta, birer birer,","fenerler yanmaya başladı.","","SON","— Paylaşım Sonu —"],
     play:'Oyna', controls:'Kontroller', settings:'Ayarlar',
     atmospheric:'Atmosferik bir yolculuk',
-    settingsTitle:'AYARLAR', masterVol:'Ana Ses', on:'AÇIK', off:'KAPALI',
-    langLabel:'Dil', change:'Enter/Space: değiştir', back:'ESC: geri',
+    settingsTitle:'AYARLAR', masterVol:'Ana Ses', musicVol:'Müzik', on:'AÇIK', off:'KAPALI',
+    langLabel:'Dil', change:'←/→: ayarla', back:'ESC: geri',
     pause:'DURAKLAT', resume:'Devam Et', mainMenu:'Menüye Dön',
     returnMenu:'Menüye dönmek için Enter',
     fragments:'Fragman',
@@ -129,8 +129,8 @@ const T_TEXT = {
     endShare:["You did not give up your light. Nor hide it.","You divided it.","To the Lamplighter, and to the Echo,","to the song of the wind.","And to the Extinguished.","None was as bright as the sun.","But far away, one by one,","the lanterns began to burn.","","THE END","— Shared Light Ending —"],
     play:'Play', controls:'Controls', settings:'Settings',
     atmospheric:'An atmospheric journey',
-    settingsTitle:'SETTINGS', masterVol:'Master Vol', on:'ON', off:'OFF',
-    langLabel:'Language', change:'Enter/Space: toggle', back:'ESC: back',
+    settingsTitle:'SETTINGS', masterVol:'Master Vol', musicVol:'Music', on:'ON', off:'OFF',
+    langLabel:'Language', change:'←/→: adjust', back:'ESC: back',
     pause:'PAUSED', resume:'Resume', mainMenu:'Main Menu',
     returnMenu:'Press Enter to return to menu',
     fragments:'Fragment',
@@ -167,6 +167,7 @@ document.addEventListener('keydown', e => {
   if (!keys[e.code]) jp[e.code] = true;
   keys[e.code] = true;
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  initAudio();
   if (actx && actx.state === 'suspended') actx.resume().catch(()=>{});
 });
 window.addEventListener('blur', () => { for (const k in keys) delete keys[k]; });
@@ -184,7 +185,6 @@ function isPause() { return jp['Escape']; }
 function clearJP() { for (let k in jp) delete jp[k]; }
 
 let actx = null, masterGain = null, audioReady = false;
-let ambOsc = null, windSrc = null, ambGain2 = null, windGain2 = null;
 
 function initAudio() {
   if (audioReady) return;
@@ -303,60 +303,192 @@ function playJump() {
 
 function playDeath() { playTone(150, 0.3, 'sawtooth', 0.06); playTone(100, 0.4, 'sine', 0.04, 0.1); }
 
-function startAmbient(lvl) {
-  if (!actx) return;
-  stopAmbient();
-  const scales = [
-    [220, 261, 294, 330, 392],
-    [196, 220, 261, 294, 349],
-    [174, 196, 220, 261, 294],
-    [164, 196, 220, 246, 294],
-    [220, 246, 294, 330, 370],
-  ];
-  const scale = scales[Math.min(lvl, scales.length - 1)];
-  windGain2 = actx.createGain();
-  windGain2.gain.value = 0;
-  windGain2.connect(masterGain);
-  // Derin uğultu
-  ambOsc = actx.createOscillator(); ambOsc.type='sine'; ambOsc.frequency.value=scale[0]/4;
-  const dg = actx.createGain(); dg.gain.value=0.05; ambOsc.connect(dg); dg.connect(masterGain); ambOsc.start();
-  let melodyActive = true;
-  function schedMelody(startTime) {
-    if (!melodyActive) return;
-    const gap = 2.2 + Math.random() * 3.5;
-    const note = scale[Math.floor(Math.random() * scale.length)];
-    const harmNote = scale[Math.floor(Math.random() * scale.length)];
-    const t = startTime;
-    const o = actx.createOscillator();
-    const g = actx.createGain();
-    o.type = 'sine';
-    o.frequency.value = note;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.028, t + 0.18);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
-    o.connect(g); g.connect(masterGain);
-    o.start(t); o.stop(t + 1.4);
-    const o2 = actx.createOscillator();
-    const g2 = actx.createGain();
-    o2.type = 'triangle';
-    o2.frequency.value = harmNote * 1.5;
-    g2.gain.setValueAtTime(0, t + 0.05);
-    g2.gain.linearRampToValueAtTime(0.010, t + 0.25);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
-    o2.connect(g2); g2.connect(masterGain);
-    o2.start(t + 0.05); o2.stop(t + 1.2);
-    const tid = setTimeout(() => { if (melodyActive) schedMelody(actx.currentTime); }, gap * 1000);
-    windGain2._tid = tid;
-  }
-  schedMelody(actx.currentTime + 0.5);
-  windGain2._stop = () => { melodyActive = false; if (windGain2._tid) clearTimeout(windGain2._tid); };
+// --- MÜZİK: bölgeye göre bestelenmiş temalar, yankı, doğa sesleri, olaylara tepki ---
+// Ezgi: "adım:midi:uzunluk" (adım = sekizlik), ölçüler | ile ayrılır. Her tema aynı ana motifle (5-1-2-b3) açılır.
+const TRACKS={
+  menu:{bpm:54,steps:8,lead:'bell',arp:0.25,pad:0.9,bass:0.5,wind:0.25,drip:0,
+    ch:[[38,57,62,65,69],[34,58,62,65,69],[41,57,60,65,69],[36,55,60,64,67]],
+    a:"0:69:2 2:74:3 5:76:1 6:77:2|0:74:6|0:72:3 3:69:5|0:67:3 3:72:5",
+    b:"0:77:3 3:76:1 4:74:4|0:70:4 4:74:4|0:72:6|0:76:3 3:74:5"},
+  0:{bpm:66,steps:8,lead:'bell',arp:0.6,pad:1,bass:0.6,wind:0.3,drip:0.5,
+    ch:[[38,57,62,65,76],[34,58,62,65,69],[41,57,60,65,69],[36,55,60,64,74]],
+    a:"0:69:2 2:74:3 5:76:1 6:77:2|0:74:4 5:72:1 6:70:2|0:72:3 3:69:3 6:72:2|0:76:3 3:74:1 4:72:4",
+    b:"0:77:3 3:76:1 4:74:4|0:70:2 2:74:2 4:77:4|0:81:3 3:79:1 4:77:2 6:72:2|0:76:2 2:74:2 4:67:4"},
+  1:{bpm:84,steps:6,lead:'box',arp:0.7,pad:0.8,bass:0.6,wind:0.55,drip:0,toll:1,     // eski bir ninni, vals
+    ch:[[45,57,60,64],[41,57,60,65],[38,57,62,65],[40,56,59,64]],
+    a:"0:64:2 2:69:2 4:71:2|0:72:4 4:69:2|0:74:2 2:72:1 3:69:3|0:68:3 3:71:3",
+    b:"0:76:3 3:74:1 4:72:2|0:69:3 3:72:3|0:77:2 2:76:2 4:74:2|0:71:4 4:68:2"},
+  2:{bpm:60,steps:8,lead:'pluck',arp:0.2,pad:1,bass:1,wind:0.15,drip:1,metal:1,
+    ch:[[36,55,60,63],[32,56,60,63],[29,53,56,60],[31,55,58,62]],
+    a:"0:67:3 3:72:5|2:74:2 4:75:4|0:72:4 4:68:4|0:67:8",
+    b:"0:79:4 4:75:4|0:72:6|2:68:2 4:72:4|0:70:4 4:67:4"},
+  3:{bpm:72,steps:8,lead:'flute',arp:0.65,pad:0.9,bass:0.6,wind:1,drip:0,
+    ch:[[40,55,59,64,66],[36,55,60,64,67],[43,55,59,62,67],[38,57,62,66,69]],
+    a:"0:71:1 1:76:3 4:78:2 6:79:2|0:79:3 3:76:5|0:74:2 2:79:2 4:83:4|0:81:4 4:78:4",
+    b:"0:83:3 3:79:1 4:76:4|0:84:3 3:83:1 4:79:4|0:86:2 2:83:2 4:79:4|0:78:2 2:76:2 4:74:4"},
+  4:{bpm:62,steps:8,lead:'bell',arp:0.8,pad:1.1,bass:0.8,wind:0.2,drip:0.2,choir:1,
+    ch:[[35,54,59,62,66],[31,55,59,62,66],[38,57,62,66,69],[33,57,61,64,69]],
+    a:"0:66:2 2:71:2 4:73:2 6:74:2|0:74:4 4:71:4|0:78:4 4:74:4|0:76:6 6:73:2",
+    b:"0:78:2 2:79:2 4:78:4|0:83:4 4:79:4|0:81:2 2:78:2 4:74:4|0:73:4 4:76:4"},
+  boss:{bpm:112,steps:8,lead:'choirlead',arp:0.9,pad:1,bass:1.2,wind:0.3,drip:0,drum:1,choir:0.7,
+    ch:[[38,57,62,65],[34,58,62,65],[31,55,58,62],[33,57,61,64]],
+    a:"0:74:1 1:74:1 3:77:1 4:76:2 6:74:2|0:70:3 3:74:2 5:77:3|0:79:2 2:77:1 3:74:2 5:70:3|0:73:4 4:76:4",
+    b:"0:81:3 3:79:1 4:77:2 6:76:2|0:77:3 3:74:5|0:82:2 2:81:1 3:79:2 5:74:3|0:76:4 4:73:4"},
+  selfish:{bpm:46,steps:8,lead:'box',arp:0,pad:0.6,bass:0.7,wind:0.8,drip:0,
+    ch:[[38,57,62],[38,56,62],[38,55,62],[38,57,61]],
+    a:"0:69:4 4:74:4|0:76:8||0:73:8", b:"|0:77:8||"},
+  sacrifice:{bpm:58,steps:8,lead:'bell',arp:0.4,pad:1,bass:0.6,wind:0.2,drip:0,choir:0.6,
+    ch:[[38,57,62,66],[35,59,62,66],[31,55,59,62],[33,57,61,64]],
+    a:"0:69:2 2:74:3 5:76:1 6:78:2|0:78:4 4:74:4|0:71:2 2:74:2 4:79:4|0:78:3 3:76:5",
+    b:"0:81:4 4:78:4|0:74:6|0:79:3 3:78:1 4:74:4|0:73:8"},
+  share:{bpm:72,steps:8,lead:'flute',arp:0.8,pad:1.1,bass:0.8,wind:0.2,drip:0,choir:0.9,
+    ch:[[38,57,62,66],[43,55,59,62],[35,59,62,66],[33,57,61,64]],
+    a:"0:69:2 2:74:3 5:76:1 6:78:2|0:79:4 4:78:2 6:74:2|0:78:3 3:74:5|0:76:3 3:73:1 4:76:4",
+    b:"0:81:3 3:79:1 4:78:4|0:83:4 4:79:4|0:81:2 2:78:2 4:74:4|0:76:4 4:73:4"}
+};
+for (const k in TRACKS) for (const p of ['a','b'])
+  TRACKS[k][p]=TRACKS[k][p].split('|').map(b=>b.split(' ').filter(Boolean).map(n=>n.split(':').map(Number)));
+const mus={key:null,cur:null,bus:null,rev:null,filt:null,noise:null,next:0,step:0,timer:0,heart:0};
+// Müzik seviyesi (0-10), tarayıcıda saklanır
+let musicVol=8;
+try { const v=parseInt(localStorage.getItem('tll_music'),10); if (v>=0&&v<=10) musicVol=v; } catch(e) {}
+const musicGain=()=>2.4*Math.pow(musicVol/10,1.5);
+function setMusicVol(v) {
+  musicVol=Math.max(0,Math.min(10,v));
+  try { localStorage.setItem('tll_music',musicVol); } catch(e) {}
+  if (mus.bus) mus.bus.gain.setTargetAtTime(musicGain(),actx.currentTime,0.05);
 }
+const mHz=m=>440*Math.pow(2,(m-69)/12);
 
-function stopAmbient() {
-  try { if (ambOsc) ambOsc.stop(); } catch(e){}
-  try { if (windSrc) windSrc.stop(); } catch(e){}
-  try { if (windGain2 && windGain2._stop) windGain2._stop(); } catch(e){}
-  ambOsc = null; windSrc = null; windGain2 = null;
+function musicInit() {
+  const A=actx, sr=A.sampleRate;
+  const comp=A.createDynamicsCompressor(); comp.threshold.value=-16; comp.ratio.value=3; comp.connect(masterGain);
+  mus.filt=A.createBiquadFilter(); mus.filt.type='lowpass'; mus.filt.frequency.value=9000; mus.filt.Q.value=0.3; mus.filt.connect(comp);
+  mus.bus=A.createGain(); mus.bus.gain.value=musicGain(); mus.bus.connect(mus.filt);
+  // Mağara yankısı
+  const len=Math.floor(sr*3.6), ir=A.createBuffer(2,len,sr);
+  for (let ch=0;ch<2;ch++) { const d=ir.getChannelData(ch); let lp=0;
+    for (let i=0;i<len;i++) { const k=i/len; lp+=((Math.random()*2-1)-lp)*(0.75-0.6*k); d[i]=lp*Math.pow(1-k,2.6); } }
+  mus.rev=A.createConvolver(); mus.rev.buffer=ir;
+  const rg=A.createGain(); rg.gain.value=0.6; mus.rev.connect(rg); rg.connect(mus.bus);
+  const nb=A.createBuffer(1,sr*4,sr), nd=nb.getChannelData(0);
+  for (let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  mus.noise=nb;
+}
+// Her temanın kendi kanalı: geçişte biri sönerken öteki açılır
+function musicSwitch(key) {
+  const A=actx, t=A.currentTime, old=mus.cur;
+  if (old) {
+    old.g.gain.cancelScheduledValues(t); old.g.gain.setValueAtTime(old.g.gain.value,t); old.g.gain.linearRampToValueAtTime(0,t+(key==='boss'?0.8:2.5));
+    old.s.gain.cancelScheduledValues(t); old.s.gain.setValueAtTime(old.s.gain.value,t); old.s.gain.linearRampToValueAtTime(0,t+2.5);
+    for (const n of old.loops) try { n.stop(t+3); } catch(e) {}
+    setTimeout(()=>{ old.g.disconnect(); old.s.disconnect(); },9000);
+  }
+  const T=TRACKS[key], g=A.createGain(), s=A.createGain(), loops=[];
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(1,t+(key==='boss'?0.3:3)); g.connect(mus.bus);
+  s.gain.value=0.5; g.connect(s); s.connect(mus.rev);
+  // Rüzgâr: iki katman, yavaşça dalgalanan süzgeç
+  for (const [f,q,v,rate] of [[320,0.8,0.05,0.07],[900,2.2,0.018,0.11]]) {
+    const n=A.createBufferSource(), bp=A.createBiquadFilter(), ng=A.createGain(), l=A.createOscillator(), lg=A.createGain(), lv=A.createGain();
+    n.buffer=mus.noise; n.loop=true; bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=q;
+    ng.gain.value=v*T.wind; l.frequency.value=rate; lg.gain.value=f*0.45; lv.gain.value=v*T.wind*0.5;
+    l.connect(lg); lg.connect(bp.frequency); l.connect(lv); lv.connect(ng.gain);
+    n.connect(bp); bp.connect(ng); ng.connect(g); n.start(t); l.start(t); loops.push(n,l);
+  }
+  mus.key=key; mus.cur={g,s,loops}; mus.step=0; mus.next=t+(key==='boss'?0.15:0.6);
+}
+// Tek ses: yumuşak zarf, isteğe bağlı süzgeç ve titreşim
+function mTone(f,t,dur,vol,o) {
+  const A=actx, os=A.createOscillator(), g=A.createGain(), att=o.att||0.01, pan=A.createStereoPanner();
+  os.type=o.type||'sine'; os.frequency.value=f; os.detune.value=o.det||0;
+  if (o.vib) { const l=A.createOscillator(), lg=A.createGain(); l.frequency.value=4.6; lg.gain.setValueAtTime(0,t); lg.gain.linearRampToValueAtTime(o.vib,t+0.5); l.connect(lg); lg.connect(os.detune); l.start(t); l.stop(t+dur+0.1); }
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+att);
+  if (o.hold) { g.gain.setValueAtTime(vol,t+Math.max(att,dur-o.hold)); g.gain.linearRampToValueAtTime(0.0001,t+dur); }
+  else g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  let n=os;
+  if (o.cut) { const b=A.createBiquadFilter(); b.type=o.ft||'lowpass'; b.frequency.value=o.cut; b.Q.value=o.q||0.5; n.connect(b); n=b; }
+  pan.pan.value=o.pan||0;
+  n.connect(g); g.connect(pan); pan.connect(mus.cur.g); os.start(t); os.stop(t+dur+0.05);
+}
+function mNoise(t,dur,vol,cut,type) {
+  const A=actx, n=A.createBufferSource(), b=A.createBiquadFilter(), g=A.createGain();
+  n.buffer=mus.noise; b.type=type||'bandpass'; b.frequency.value=cut; b.Q.value=1.2;
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  n.connect(b); b.connect(g); g.connect(mus.cur.g); n.start(t,Math.random()*3); n.stop(t+dur+0.02);
+}
+const VOICE={
+  bell(m,t,d,v) { const f=mHz(m); mTone(f,t,d+1.8,0.075*v,{}); mTone(f*2.005,t,d+0.8,0.026*v,{pan:0.2}); mTone(f*3.76,t,0.5,0.012*v,{pan:-0.2}); },
+  box(m,t,d,v) { const f=mHz(m+12); mTone(f,t,1.7,0.05*v,{type:'triangle',det:-7,cut:3200}); mTone(f*1.003,t,1.5,0.032*v,{det:8,pan:0.25}); mTone(f*4.1,t,0.18,0.01*v,{}); },
+  pluck(m,t,d,v) { const f=mHz(m); mTone(f,t,d*0.5+1.3,0.085*v,{type:'triangle',cut:1500}); mTone(f*0.5,t,1.2,0.035*v,{}); },
+  flute(m,t,d,v) { const f=mHz(m); mTone(f,t,d+0.25,0.06*v,{att:0.1,hold:0.3,vib:14}); mTone(f*2,t,d+0.2,0.012*v,{att:0.12,hold:0.3,vib:14}); mNoise(t,0.25,0.014*v,f*2); },
+  choirlead(m,t,d,v) { const f=mHz(m); for (const k of [-9,9]) mTone(f,t,d+0.35,0.05*v,{type:'sawtooth',det:k,att:0.05,hold:0.25,cut:1500,vib:10,pan:k/25}); }
+};
+function musicStep(T,step,t,dt) {
+  const bar=Math.floor(step/T.steps), st=step%T.steps, phrase=Math.floor(bar/4), ci=bar%4, ch=T.ch[ci], barDur=dt*T.steps;
+  // Bölüm akışı: giriş, ezgi, ezgi 2, nefes... böylece döngü hissi azalır
+  const form=T.drum?['a','b']:['','a','b','','a','a2','b',''], part=form[phrase%form.length];
+  const danger=mus.danger||0;
+  if (st===0) {
+    for (const m of ch.slice(1)) for (const k of [-6,6])
+      mTone(mHz(m),t,barDur*1.35,0.017*T.pad,{type:'sawtooth',det:k,att:barDur*0.35,hold:barDur*0.55,cut:part?620:820,pan:k/12});
+    mTone(mHz(ch[0]),t,barDur*1.1,0.1*T.bass,{att:0.08,hold:barDur*0.4});
+    mTone(mHz(ch[0]+12),t,barDur,0.028*T.bass,{type:'triangle',att:0.1,hold:barDur*0.4,cut:500});
+    if (T.choir) for (const m of [ch[2],ch[ch.length-1]]) for (const [c,q] of [[700,5],[1150,7]])
+      mTone(mHz(m),t,barDur*1.25,0.05*T.choir,{type:'sawtooth',att:barDur*0.4,hold:barDur*0.5,cut:c,q,ft:'bandpass',vib:8});
+    if (T.toll&&bar%8===0) { const f=mHz(45); for (const [r,v] of [[1,0.07],[2.4,0.03],[2.98,0.02],[5.2,0.008]]) mTone(f*r,t,5,v,{}); }  // uzak çan
+  }
+  // Arpej: akorun notaları, hafif insan payı
+  if (T.arp&&Math.random()<T.arp*(part?0.75:0.95)) {
+    const notes=ch.slice(1), m=notes[[0,2,1,3,2,1,3,2][(st+phrase)%8]%notes.length]+(phrase%2&&st%3===0?12:0);
+    mTone(mHz(m+12),t+Math.random()*0.015,1.1,(T.drum?0.03:0.022)*(st%2?0.7:1),{type:'triangle',cut:2000,pan:Math.sin(step*1.3)*0.5});
+  }
+  if (part) {
+    const oct=part==='a2'?12:0;
+    for (const [s,m,l] of T[part[0]][ci]||[]) if (s===st) {
+      VOICE[T.lead](m,t+Math.random()*0.012,l*dt,0.9+Math.random()*0.15);
+      if (oct) VOICE.bell(m+12,t+dt*0.5,dt,0.25);                 // yankılanan üst ses
+    }
+  } else if (st===(phrase*3+ci*5)%T.steps&&Math.random()<0.5) VOICE[T.lead](ch[1+Math.floor(Math.random()*(ch.length-1))]+12,t,dt*3,0.45);
+  if (T.metal&&(st===3||st===6)&&Math.random()<0.35) {           // derinden gelen kazma
+    const v=0.5+Math.random()*0.5; for (const r of [1,2.76,4.07]) mTone(1180*r,t,0.5,0.013*v,{pan:Math.random()*1.4-0.7}); mNoise(t,0.05,0.03*v,2600);
+  }
+  if (T.drip&&Math.random()<0.07*T.drip) {
+    const f=900+Math.random()*1100, p=Math.random()*1.6-0.8; mTone(f,t+Math.random()*dt,0.13,0.028,{pan:p}); mTone(f*1.5,t+0.06,0.22,0.014,{pan:p});
+  }
+  if (T.drum) {
+    const hit=(f,v,d)=>{ mTone(f,t,d,v,{}); mNoise(t,0.07,v*0.3,160,'lowpass'); };
+    const rage=boss&&boss.hp<=4;
+    if (st===0||st===3||st===6) hit(58,st?0.16:0.24,0.3);
+    if (st===4) { mNoise(t,0.16,0.06,1300); hit(92,0.1,0.18); }
+    if (rage&&st%2) mNoise(t,0.05,0.025,5200,'highpass');
+    if (st%2===0) mTone(mHz(ch[0]+(st===6?7:0)),t,dt*0.9,0.07,{type:'triangle',cut:420});
+  } else if (danger>0.15&&(st===0||st===1)) mTone(52,t,0.28,0.11*danger*(st?0.6:1),{});   // yakında düşman: kalp gibi vuruş
+}
+// Gelecekteki adımları önceden sıraya koyar
+function musicPump(until) {
+  const T=TRACKS[mus.key], dt=30/T.bpm;
+  if (mus.next<actx.currentTime-0.2) mus.next=actx.currentTime+0.05;  // sekme uyuduysa birikmiş notaları atla
+  while (mus.next<until) { musicStep(T,mus.step,mus.next,dt); mus.step++; mus.next+=dt; }
+}
+function musicKey() {
+  if (gameState==='ending') return endingType;
+  if (gameState==='menu'||gameState==='intro'||gameState==='loading') return 'menu';
+  if (boss&&boss.st!=='die') return 'boss';
+  return String(currentLevel);
+}
+function updateMusic() {
+  if (!actx||!masterGain||actx.state!=='running') return;
+  if (!mus.bus) musicInit();
+  const key=musicKey();
+  if (key!==mus.key) musicSwitch(key);
+  // Duruma tepki: duraklatmada ve konuşmada boğuklaşır, son canda dünya uzaklaşır
+  const cut=gameState==='pause'?600:gameState==='dialogue'?2600:gameState==='play'&&player.hp<=1?1300:9000;
+  if (cut!==mus.cut) { mus.cut=cut; mus.filt.frequency.setTargetAtTime(cut,actx.currentTime,0.35); }
+  let near=0;
+  if (gameState==='play') for (const e of enemies) if (!(e.t==='lurker'&&e.st===0)) near=Math.max(near,1-Math.hypot(e.x-player.x,e.y-player.y)/110);
+  mus.danger=(mus.danger||0)+(near-(mus.danger||0))*0.03;
+  if (gameState==='play'&&player.hp===1&&frameCount-mus.heart>70) { mus.heart=frameCount; playTone(48,0.22,'sine',0.16); playTone(44,0.25,'sine',0.11,0.24); }
+  musicPump(actx.currentTime+0.35);
 }
 
 function playEnding(type) {
@@ -2042,7 +2174,7 @@ function updatePlay() {
 
 function beginEnding(type) {
   endingType=type;
-  startFade(1,()=>{ gameState='ending'; endingTimer=0; stopAmbient(); playEnding(type==='selfish'?'selfish':'sacrifice'); });
+  startFade(1,()=>{ gameState='ending'; endingTimer=0;  playEnding(type==='selfish'?'selfish':'sacrifice'); });
 }
 
 function respawn() {
@@ -2067,7 +2199,6 @@ function startLevel(idx,x,y) {
   spawnEnemies(lvl);
   updateCam(lvl,true);
   gameState='play';
-  startAmbient(idx);
   fadeAlpha=1; fadeDir=-1;
   zoneTimer=0;
 }
@@ -2221,8 +2352,13 @@ function menuActs() { return readSave()?['cont','newGame','controls','settings']
 
 function updateSettings() {
   if (jp['Escape']) { showSettings=false; settingSel=0; return; }
-  if (jp['ArrowDown']||jp['KeyS']) settingSel=(settingSel+1)%2;
-  if (jp['ArrowUp']||jp['KeyW']) settingSel=(settingSel+2)%2;
+  if (jp['ArrowDown']||jp['KeyS']) settingSel=(settingSel+1)%3;
+  if (jp['ArrowUp']||jp['KeyW']) settingSel=(settingSel+2)%3;
+  if (settingSel===1) {
+    const d=(jp['ArrowRight']||jp['KeyD']?1:0)-(jp['ArrowLeft']||jp['KeyA']?1:0);
+    if (d) { setMusicVol(musicVol+d); playTick(); }
+    return;
+  }
   if (jp['Enter']||jp['Space']||jp['ArrowLeft']||jp['ArrowRight']||jp['KeyA']||jp['KeyD']) {
     if (settingSel===0) {
       soundEnabled=!soundEnabled;
@@ -2340,20 +2476,38 @@ function drawSettingsScreen() {
   renderCtx.font='5px "Press Start 2P",monospace';
   renderCtx.fillText(soundEnabled?tx('on'):tx('off'),bx+2,by+10);
 
-  // Satır 2: Dil
+  // Satır 2: Müzik seviyesi (can göstergesi gibi mum)
   renderCtx.font='6px "Press Start 2P",monospace';
-  const row1sel = settingSel===1;
+  renderCtx.fillStyle=settingSel===1?'#dde':'#778';
+  renderCtx.fillText((settingSel===1?'> ':' ')+tx('musicVol'),30,82);
+  const mx=WIDTH-122, my=76, mw=musicVol*6;
+  renderCtx.fillStyle='#4a4058'; renderCtx.fillRect(mx-3,my-2,2,9); renderCtx.fillRect(mx-1,my+6,62,1);
+  renderCtx.fillStyle='#15121f'; renderCtx.fillRect(mx,my,60,5);
+  renderCtx.fillStyle='#cfc4a4'; renderCtx.fillRect(mx,my,mw,5);
+  renderCtx.fillStyle='#f3ebd0'; renderCtx.fillRect(mx,my,mw,1);
+  for (let k=1;k<10;k++) { renderCtx.fillStyle=k<musicVol?'#8c8068':'#2c2638'; renderCtx.fillRect(mx+k*6,my+1,1,3); }
+  if (musicVol>0) {
+    coreGlow(mx+mw+2,my,6,'#ffbb66',0.2);
+    renderCtx.fillStyle='#ff9a3c'; renderCtx.fillRect(mx+mw+1,my-1,3,4); renderCtx.fillRect(mx+mw+2,my-3,1,2);
+    renderCtx.fillStyle='#fff3c4'; renderCtx.fillRect(mx+mw+2,my,1,2);
+  }
+  renderCtx.fillStyle='#aaddff'; renderCtx.font='5px "Press Start 2P",monospace';
+  renderCtx.fillText(musicVol*10+'%',WIDTH-48,my+6);
+
+  // Satır 3: Dil
+  renderCtx.font='6px "Press Start 2P",monospace';
+  const row1sel = settingSel===2;
   renderCtx.fillStyle=row1sel?'#dde':'#778';
-  renderCtx.fillText((row1sel?'> ':' ')+tx('langLabel'),30,82);
-  const lbx=WIDTH-62, lby=74, lbw=40, lbh=12;
+  renderCtx.fillText((row1sel?'> ':' ')+tx('langLabel'),30,102);
+  const lbx=WIDTH-62, lby=94, lbw=40, lbh=12;
   renderCtx.fillStyle='#2255aa'; renderCtx.fillRect(lbx,lby,lbw,lbh);
   renderCtx.strokeStyle='#556'; renderCtx.strokeRect(lbx,lby,lbw,lbh);
   renderCtx.fillStyle='#aaddff'; renderCtx.font='5px "Press Start 2P",monospace';
   renderCtx.fillText(lang,lbx+4,lby+10);
 
   renderCtx.fillStyle='#445'; renderCtx.font='5px "Press Start 2P",monospace';
-  renderCtx.fillText(tx('change'),30,108);
-  renderCtx.fillText(tx('back'),30,120);
+  renderCtx.fillText(tx('change'),30,128);
+  renderCtx.fillText(tx('back'),30,140);
 }
 
 function drawCtrlScreen() {
@@ -2411,7 +2565,7 @@ function drawIntro() {
 function updatePause() {
   if (jp['ArrowDown']||jp['KeyS']) pauseSel=(pauseSel+1)%2;
   if (jp['ArrowUp']||jp['KeyW']) pauseSel=(pauseSel+1)%2;
-  if (jp['Enter']||jp['Space']) { if(pauseSel===0)gameState='play'; else{gameState='menu';menuSel=0;stopAmbient();} }
+  if (jp['Enter']||jp['Space']) { if(pauseSel===0)gameState='play'; else{gameState='menu';menuSel=0;} }
   if (jp['Escape']) gameState='play';
 }
 function drawPause() {
@@ -2491,6 +2645,7 @@ function tick() {
   frameCount++;
   updateFade();
   updateParts();
+  updateMusic();
   switch(gameState) {
     case 'loading':
     case 'menu': if (!fadeCallback) updateMenu(); break;
